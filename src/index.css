@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* CodeMirror container */
+.cm-editor {
+  font-size: 13px !important;
+}
+
+.cm-editor .cm-scroller {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace !important;
+}
+
+/* ── GitHub-style inline comment widgets ──────────────────────────────────── */
+
+/* Host div created by InlineWidget — spans the full editor width */
+.cm-inline-widget-host {
+  width: 100%;
+  /* Reset any CodeMirror inline styles that might shrink us */
+  min-height: 0;
+}
+
+/* Push inline widget content past the gutter so it aligns with code */
+.cm-inline-widget-host > * {
+  margin-left: 0;
+  width: 100%;
+}
+
+/* Gutter hover hint — line numbers turn violet when you hover */
+.cm-gutter.cm-lineNumbers .cm-gutterElement {
+  transition: color 0.1s;
+}
+
+/* Animate the border-left bar on highlighted lines */
+.cm-line[style*="border-left"] {
+  transition: background-color 0.15s;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #161b22;
+}
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
