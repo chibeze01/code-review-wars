@@ -3,6 +3,10 @@ node_modules/
 
 # Build output
 dist/
+.next/
+
+# Claude Code local settings
+.claude/settings.local.json
 
 # Local env / secrets
 .env
