@@ -1,5 +1,7 @@
 export type Language = 'TypeScript' | 'C#'
 
+export type Domain = 'ecommerce' | 'fintech' | 'healthcare' | 'devtools' | 'saas' | 'general' | 'custom'
+
 export type IssueType = 'bug' | 'security' | 'performance' | 'style' | 'logic' | 'error-handling'
 export type IssueSeverity = 'critical' | 'major' | 'minor'
 
@@ -17,6 +19,14 @@ export interface GeneratedCode {
   language: Language
 }
 
+// Structured per-issue outcome — powers the category performance charts
+export interface IssueResult {
+  index: number
+  type: IssueType
+  severity: IssueSeverity
+  found: boolean
+}
+
 export interface EvaluationResult {
   score: number
   grade: 'A' | 'B' | 'C' | 'D' | 'F'
@@ -26,6 +36,7 @@ export interface EvaluationResult {
   falsePositives: string[]
   feedback: string
   idealReview: string
+  issueResults?: IssueResult[]
 }
 
 export interface SelectionInfo {

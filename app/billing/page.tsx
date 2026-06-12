@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { AppNav } from '@/components/AppNav'
 import { BillingClient } from '@/components/BillingClient'
 
 interface SearchParams {
@@ -28,12 +29,17 @@ export default async function BillingPage({
     searchParams,
   ])
 
+  const credits = profileResult.data?.credits ?? 0
+
   return (
-    <BillingClient
-      credits={profileResult.data?.credits ?? 0}
-      transactions={transactionsResult.data ?? []}
-      success={!!params.success}
-      canceled={!!params.canceled}
-    />
+    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f3]">
+      <AppNav credits={credits} />
+      <BillingClient
+        credits={credits}
+        transactions={transactionsResult.data ?? []}
+        success={!!params.success}
+        canceled={!!params.canceled}
+      />
+    </div>
   )
 }

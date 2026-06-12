@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+
+const VOLT = '#ccff00'
+const RED = '#cf0a2c'
 
 const CREDIT_PACKS = [
   { pack: 'starter',  credits: 10,  price: '$5',  pricePerCredit: '$0.50', popular: false },
@@ -47,115 +49,126 @@ export function BillingClient({ credits, transactions, success, canceled }: Prop
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117]">
-      <header className="border-b border-[#21262d] bg-[#161b22] px-6 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-white font-bold text-sm">
-            CR
-          </div>
-          <span className="text-base font-bold text-slate-100">Code Review Wars</span>
-        </Link>
-        <Link href="/dashboard" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-          ← Back to dashboard
-        </Link>
-      </header>
+    <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="flex items-center gap-3 mb-4">
+        <span className="h-px w-10" style={{ background: RED }} />
+        <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: RED }}>
+          Refuel
+        </span>
+      </div>
+      <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-8">
+        Buy credits<span style={{ color: VOLT }}>.</span>
+      </h1>
 
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        {success && (
-          <div className="mb-8 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-4 py-3 text-sm text-emerald-400">
-            Payment successful — credits have been added to your account.
-          </div>
-        )}
-        {canceled && (
-          <div className="mb-8 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-4 py-3 text-sm text-yellow-400">
-            Payment canceled. No charges were made.
-          </div>
-        )}
-        {buyError && (
-          <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">
-            {buyError}
-          </div>
-        )}
-
-        {/* Balance card */}
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 mb-8 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Current balance</p>
-            <p className="text-3xl font-bold text-violet-400">
-              {credits} <span className="text-xl text-slate-400">credits</span>
-            </p>
-          </div>
-          <div className="text-right text-xs text-slate-600">
-            <p>1 credit = 1 full review session</p>
-            <p className="mt-1">(code generation + AI evaluation)</p>
-          </div>
+      {success && (
+        <div className="mb-8 border px-4 py-3 text-sm font-bold" style={{ borderColor: `${VOLT}66`, background: `${VOLT}10`, color: VOLT }}>
+          Payment successful — credits have been added to your account.
         </div>
+      )}
+      {canceled && (
+        <div className="mb-8 border border-white/15 bg-white/5 px-4 py-3 text-sm text-neutral-400">
+          Payment canceled. No charges were made.
+        </div>
+      )}
+      {buyError && (
+        <div className="mb-8 border px-4 py-3 text-sm font-bold" style={{ borderColor: `${RED}66`, background: `${RED}10`, color: RED }}>
+          {buyError}
+        </div>
+      )}
 
-        {/* Credit packs */}
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">Buy credits</h2>
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {CREDIT_PACKS.map(({ pack, credits: c, price, pricePerCredit, popular }) => (
-            <div
-              key={pack}
-              className={`relative bg-[#161b22] border rounded-xl p-5 flex flex-col gap-3 ${
-                popular ? 'border-violet-500' : 'border-[#30363d]'
+      {/* Balance card */}
+      <div className="border border-white/10 bg-[#101010] p-6 mb-8 flex items-center justify-between">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Current balance</p>
+          <p className="text-4xl font-black italic" style={{ color: credits === 0 ? RED : VOLT }}>
+            {credits} <span className="text-lg text-neutral-500 not-italic font-bold uppercase">credits</span>
+          </p>
+        </div>
+        <div className="text-right text-[11px] text-neutral-600 uppercase tracking-wider leading-relaxed">
+          <p>1 credit = 1 full session</p>
+          <p>(code generation + AI evaluation)</p>
+        </div>
+      </div>
+
+      {/* Credit packs */}
+      <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-4">Pick your pack</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        {CREDIT_PACKS.map(({ pack, credits: c, price, pricePerCredit, popular }) => (
+          <div
+            key={pack}
+            className={`relative bg-[#101010] border p-5 flex flex-col gap-4 transition-all hover:-translate-y-1 ${
+              popular ? '' : 'border-white/10 hover:border-white/30'
+            }`}
+            style={popular ? { borderColor: VOLT } : undefined}
+          >
+            {popular && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase italic bg-[#ccff00] text-black px-3 py-1 -skew-x-6 whitespace-nowrap">
+                <span className="inline-block skew-x-6">Best value</span>
+              </span>
+            )}
+            <div>
+              <p className="text-3xl font-black italic" style={{ color: popular ? VOLT : '#f5f5f3' }}>{c}</p>
+              <p className="text-[10px] uppercase tracking-widest text-neutral-600">credits</p>
+            </div>
+            <div>
+              <p className="text-xl font-black text-neutral-100">{price}</p>
+              <p className="text-[11px] text-neutral-600">{pricePerCredit} / credit</p>
+            </div>
+            <button
+              onClick={() => handleBuy(pack)}
+              disabled={!!loading}
+              className={`mt-auto py-2.5 text-xs font-black uppercase italic tracking-tight -skew-x-6 transition-all disabled:opacity-50 ${
+                popular
+                  ? 'bg-[#ccff00] hover:bg-[#b9eb00] text-black'
+                  : 'border border-white/20 text-neutral-300 hover:border-white/50 hover:text-white'
               }`}
             >
-              {popular && (
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-xs font-semibold bg-violet-600 text-white px-3 py-0.5 rounded-full whitespace-nowrap">
-                  Best value
-                </span>
-              )}
-              <div>
-                <p className="text-2xl font-bold text-slate-100">{c}</p>
-                <p className="text-xs text-slate-500">credits</p>
-              </div>
-              <div>
-                <p className="text-xl font-bold text-slate-200">{price}</p>
-                <p className="text-xs text-slate-600">{pricePerCredit} / credit</p>
-              </div>
-              <button
-                onClick={() => handleBuy(pack)}
-                disabled={!!loading}
-                className={`mt-auto py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${
-                  popular
-                    ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                    : 'bg-[#21262d] hover:bg-[#30363d] text-slate-300 border border-[#30363d]'
-                }`}
-              >
+              <span className="inline-block skew-x-6">
                 {loading === pack ? 'Redirecting…' : `Buy ${c} credits`}
-              </button>
-            </div>
-          ))}
-        </div>
+              </span>
+            </button>
+          </div>
+        ))}
+      </div>
 
-        {/* Transaction history */}
-        {transactions.length > 0 && (
-          <>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">Transaction history</h2>
-            <div className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
-              {transactions.map((tx, i) => (
-                <div
-                  key={tx.id}
-                  className={`flex items-center justify-between px-4 py-3 text-sm ${
-                    i < transactions.length - 1 ? 'border-b border-[#21262d]' : ''
-                  }`}
-                >
-                  <div>
-                    <p className="text-slate-300">{tx.description ?? tx.type}</p>
-                    <p className="text-xs text-slate-600 mt-0.5">
+      {/* Transaction history */}
+      {transactions.length > 0 && (
+        <>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-4">Transaction history</p>
+          <div className="border border-white/10 bg-[#101010] divide-y divide-white/5">
+            {transactions.map((tx) => (
+              <div key={tx.id} className="flex items-center justify-between px-4 py-3 text-sm">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 border shrink-0"
+                    style={
+                      tx.type === 'purchase'
+                        ? { borderColor: `${VOLT}55`, color: VOLT }
+                        : tx.type === 'bonus'
+                        ? { borderColor: '#8fb33c55', color: '#8fb33c' }
+                        : { borderColor: `${RED}55`, color: RED }
+                    }
+                  >
+                    {tx.type}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-neutral-300 truncate">{tx.description ?? tx.type}</p>
+                    <p className="text-[11px] text-neutral-600 mt-0.5">
                       {new Date(tx.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className={`font-semibold ${tx.amount > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
-                    {tx.amount > 0 ? '+' : ''}{tx.amount}
-                  </span>
                 </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+                <span
+                  className="font-black italic shrink-0 ml-4"
+                  style={{ color: tx.amount > 0 ? VOLT : RED }}
+                >
+                  {tx.amount > 0 ? '+' : ''}{tx.amount}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

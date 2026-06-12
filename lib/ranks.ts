@@ -21,6 +21,22 @@ export const RANKS: Rank[] = [
   { kyu: 0, label: '1 dan', title: 'Review Sensei',       color: '#b1361e', threshold: 3700 },
 ]
 
+// Shared athletic-theme grade palette (volt → red)
+export const GRADE_COLORS: Record<string, string> = {
+  A: '#ccff00',
+  B: '#8fb33c',
+  C: '#8a8a8a',
+  D: '#b46a2a',
+  F: '#cf0a2c',
+}
+
+export function scoreColor(score: number): string {
+  if (score >= 80) return '#ccff00'
+  if (score >= 60) return '#8fb33c'
+  if (score >= 40) return '#b46a2a'
+  return '#cf0a2c'
+}
+
 export interface RankProgress {
   rank: Rank
   next: Rank | null

@@ -89,10 +89,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
   }
 
-  const { generated, comments, generalNotes } = await request.json() as {
+  const { generated, comments, generalNotes, durationSeconds } = await request.json() as {
     generated: GeneratedCode
     comments: CodeComment[]
     generalNotes: string
+    durationSeconds?: number
   }
 
   const system = `You are a senior software engineer and technical interviewer evaluating a candidate's code review skills.
@@ -134,7 +135,8 @@ Return this exact JSON:
   "issuesMissed": ["<issue # and why it matters — be educational>"],
   "falsePositives": ["<things the candidate flagged that are actually fine, with explanation>"],
   "feedback": "<specific, actionable advice on how they can improve their code review skills — 3-5 bullet points as a single string with \\n between points>",
-  "idealReview": "<what an expert review of this code would say — written as if you are the expert reviewer, covering all issues clearly with line references>"
+  "idealReview": "<what an expert review of this code would say — written as if you are the expert reviewer, covering all issues clearly with line references>",
+  "issueResults": [<one entry for EVERY intentional issue listed above, in order: {"index": <1-based issue number>, "type": "<that issue's type>", "severity": "<that issue's severity>", "found": <true if the candidate identified it fully or partially, else false>}>]
 }`
 
   try {
@@ -147,7 +149,8 @@ Return this exact JSON:
       return NextResponse.json({ error: 'Failed to deduct credit' }, { status: 500 })
     }
 
-    // Persist the session
+    // Persist the session — durationSeconds rides along in the feedback jsonb
+    // so no schema migration is needed for dashboard stats
     await supabase.from('review_sessions').insert({
       user_id: user.id,
       scenario: generated.scenario,
@@ -156,7 +159,13 @@ Return this exact JSON:
       annotations: comments,
       score: evaluation.score,
       grade: evaluation.grade,
-      feedback: evaluation,
+      feedback: {
+        ...evaluation,
+        generatedIssues: generated.issues,
+        durationSeconds: typeof durationSeconds === 'number' && durationSeconds > 0
+          ? Math.round(durationSeconds)
+          : null,
+      },
       credits_used: 1,
     })
 
