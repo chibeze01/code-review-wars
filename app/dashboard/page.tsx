@@ -13,7 +13,7 @@ export default async function DashboardPage() {
     supabase.from('profiles').select('credits').eq('id', user.id).single(),
     supabase
       .from('review_sessions')
-      .select('id, scenario, language, score, grade, created_at, issueResults:feedback->issueResults, durationSeconds:feedback->durationSeconds')
+      .select('id, scenario, language, score, grade, created_at, issueResults:feedback->issueResults, durationSeconds:feedback->durationSeconds, brilliantFinds:feedback->brilliantFinds')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
   ])
@@ -29,6 +29,7 @@ export default async function DashboardPage() {
       ? (s.issueResults as { type: string; severity: string; found: boolean }[])
       : null,
     durationSeconds: typeof s.durationSeconds === 'number' ? s.durationSeconds : null,
+    brilliants: Array.isArray(s.brilliantFinds) ? s.brilliantFinds.length : 0,
   }))
 
   const credits = profile?.credits ?? 0

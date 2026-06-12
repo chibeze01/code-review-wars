@@ -6,6 +6,11 @@ export const dynamic = 'force-dynamic'
 
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
 
+// Chess-style "!!" — bonus awarded per genuine unplanted flaw the candidate
+// caught. Applied server-side so the model never does scoring arithmetic.
+const BRILLIANT_BONUS = 10
+const MAX_SCORE_WITH_BONUS = 120
+
 function extractJson(raw: string): string {
   const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/)
   if (fenceMatch) return fenceMatch[1].trim()
@@ -99,6 +104,10 @@ export async function POST(request: NextRequest) {
   const system = `You are a senior software engineer and technical interviewer evaluating a candidate's code review skills.
 The candidate may have left inline annotations on specific lines of code and/or written general notes.
 Be fair but rigorous. Credit partial catches and good line-level annotations. Partial credit is fine.
+The code was generated with a list of INTENTIONAL issues, but generated code can contain real flaws beyond that list.
+When the candidate flags something not on the list, judge it on its merits: a genuine, defensible flaw is a rare
+"brilliant find" (chess-style !!); an incorrect or pedantic flag is a false positive. Be strict — brilliant finds
+should be uncommon and only awarded for real, clearly-identified problems.
 Always respond with valid JSON only, no markdown fences.`
 
   const issueList = generated.issues
@@ -126,6 +135,14 @@ Evaluate the full review — both inline annotations and general notes.
 For inline annotations, assess whether the line reference correctly identifies a real issue.
 Credit partial catches. Consider how clearly each issue was described and how actionable the feedback was.
 
+For anything the candidate flagged that is NOT one of the intentional issues above, classify it carefully:
+- It identifies a GENUINE flaw that really exists in the code (a true bug, vulnerability, performance or
+  correctness problem the generator never meant to plant) → put it in "brilliantFinds". Be strict: only award
+  this for real, defensible, clearly-articulated problems. Never duplicate a planted issue here.
+- It is actually fine, subjective, or wrong → put it in "falsePositives".
+Score ONLY against the intentional issues (0-100). Do NOT add points for brilliant finds — the server awards
+their bonus separately.
+
 Return this exact JSON:
 {
   "score": <0-100 integer>,
@@ -133,7 +150,8 @@ Return this exact JSON:
   "summary": "<2-3 sentence overall assessment>",
   "issuesFound": ["<issue # and what the candidate correctly identified, referencing their annotation if applicable>"],
   "issuesMissed": ["<issue # and why it matters — be educational>"],
-  "falsePositives": ["<things the candidate flagged that are actually fine, with explanation>"],
+  "falsePositives": ["<things the candidate flagged that are actually fine, with explanation — excluding brilliant finds>"],
+  "brilliantFinds": ["<genuine unplanted flaws the candidate correctly caught, with explanation of why each is a real issue — empty array if none>"],
   "feedback": "<specific, actionable advice on how they can improve their code review skills — 3-5 bullet points as a single string with \\n between points>",
   "idealReview": "<what an expert review of this code would say — written as if you are the expert reviewer, covering all issues clearly with line references>",
   "issueResults": [<one entry for EVERY intentional issue listed above, in order: {"index": <1-based issue number>, "type": "<that issue's type>", "severity": "<that issue's severity>", "found": <true if the candidate identified it fully or partially, else false>}>]
@@ -142,6 +160,16 @@ Return this exact JSON:
   try {
     const raw = await callClaude(system, userMsg)
     const evaluation = JSON.parse(extractJson(raw)) as EvaluationResult
+
+    // Award the brilliant bonus deterministically — the model scores only
+    // against planted issues; unplanted genuine finds add points on top
+    if (!Array.isArray(evaluation.brilliantFinds)) evaluation.brilliantFinds = []
+    if (evaluation.brilliantFinds.length > 0) {
+      evaluation.score = Math.min(
+        evaluation.score + BRILLIANT_BONUS * evaluation.brilliantFinds.length,
+        MAX_SCORE_WITH_BONUS,
+      )
+    }
 
     // Deduct 1 credit atomically via DB function
     const { error: deductError } = await supabase.rpc('deduct_credit', { p_user_id: user.id })

@@ -59,12 +59,39 @@ export function FeedbackPanel({ result, generated, comments, generalNotes, honor
           <div className="w-full h-3 bg-cream-2 border-2 border-ink rounded-full overflow-hidden">
             <div
               className="h-full transition-all duration-700"
-              style={{ width: `${result.score}%`, background: scoreColor(result.score) }}
+              style={{ width: `${Math.min(result.score, 100)}%`, background: scoreColor(result.score) }}
             />
           </div>
           <p className="mt-3 text-sm text-ink-2">{result.summary}</p>
         </div>
       </div>
+
+      {/* Brilliant finds — chess-style "!!" celebration */}
+      {(result.brilliantFinds?.length ?? 0) > 0 && (
+        <div className="bg-hi-soft border-2.5 border-ink rounded-pop-lg shadow-hard p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="w-11 h-11 rounded-full border-2.5 border-ink bg-hi shadow-hard-sm flex items-center justify-center font-mono font-bold text-lg">
+              !!
+            </span>
+            <div>
+              <p className="font-display font-extrabold text-base">
+                ✨ Brilliant find{result.brilliantFinds!.length !== 1 ? 's' : ''}!
+              </p>
+              <p className="text-xs text-ink-2">
+                You caught {result.brilliantFinds!.length === 1 ? 'a flaw' : 'flaws'} we never even planted — +10 bonus points each
+              </p>
+            </div>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {result.brilliantFinds!.map((item, i) => (
+              <li key={i} className="text-sm text-ink flex gap-2.5">
+                <span className="font-mono font-bold shrink-0 mt-0.5">✨</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Code reference (collapsible) */}
       <div className="card-pop !shadow-hard-sm overflow-hidden">

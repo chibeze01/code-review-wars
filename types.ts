@@ -34,6 +34,9 @@ export interface EvaluationResult {
   issuesFound: string[]
   issuesMissed: string[]
   falsePositives: string[]
+  // Chess-style "!!" — genuine flaws the candidate caught that were never
+  // intentionally planted. Each one earns bonus points on top of the score.
+  brilliantFinds?: string[]
   feedback: string
   idealReview: string
   issueResults?: IssueResult[]

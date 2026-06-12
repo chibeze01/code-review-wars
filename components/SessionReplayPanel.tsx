@@ -83,12 +83,34 @@ export function SessionReplayPanel({ session }: Props) {
           <div className="w-full h-3 bg-cream-2 border-2 border-ink rounded-full overflow-hidden">
             <div
               className="h-full"
-              style={{ width: `${score}%`, background: scoreColor(score) }}
+              style={{ width: `${Math.min(score, 100)}%`, background: scoreColor(score) }}
             />
           </div>
           {fb?.summary && <p className="mt-3 text-sm text-ink-2">{fb.summary}</p>}
         </div>
       </div>
+
+      {/* Brilliant finds */}
+      {(fb?.brilliantFinds?.length ?? 0) > 0 && (
+        <div className="bg-hi-soft border-2.5 border-ink rounded-pop-lg shadow-hard p-5 mb-5">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="w-11 h-11 rounded-full border-2.5 border-ink bg-hi shadow-hard-sm flex items-center justify-center font-mono font-bold text-lg">
+              !!
+            </span>
+            <p className="font-display font-extrabold text-base">
+              ✨ Brilliant find{fb!.brilliantFinds!.length !== 1 ? 's' : ''} — flaws we never planted
+            </p>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {fb!.brilliantFinds!.map((item, i) => (
+              <li key={i} className="text-sm text-ink flex gap-2.5">
+                <span className="font-mono font-bold shrink-0 mt-0.5">✨</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Scenario */}
       {session.scenario && (

@@ -15,7 +15,7 @@ export default async function HistoryPage() {
     supabase.from('profiles').select('credits').eq('id', user.id).single(),
     supabase
       .from('review_sessions')
-      .select('id, scenario, language, score, grade, created_at')
+      .select('id, scenario, language, score, grade, created_at, brilliantFinds:feedback->brilliantFinds')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50),
@@ -91,6 +91,7 @@ export default async function HistoryPage() {
           <div className="flex flex-col gap-3.5">
             {sessions.map((s) => {
               const gradeColor = GRADE_COLORS[s.grade] ?? '#57534e'
+              const brilliants = Array.isArray(s.brilliantFinds) ? s.brilliantFinds.length : 0
               return (
                 <Link
                   key={s.id}
@@ -117,6 +118,14 @@ export default async function HistoryPage() {
                       <span className="text-[11px] font-mono font-bold text-brand">
                         +{s.score} honor
                       </span>
+                      {brilliants > 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 font-mono font-bold text-[10px] bg-hi-soft border-2 border-ink rounded-full px-1.5 py-0.5"
+                          title={`${brilliants} brilliant find${brilliants !== 1 ? 's' : ''} — flaws we never planted`}
+                        >
+                          ✨ {brilliants}!!
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="w-24 shrink-0 hidden sm:flex flex-col gap-1">

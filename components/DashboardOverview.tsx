@@ -14,6 +14,8 @@ export interface SessionSummary {
   createdAt: string
   issueResults: { type: string; severity: string; found: boolean }[] | null
   durationSeconds: number | null
+  // Count of "brilliant" finds — genuine flaws caught that were never planted
+  brilliants: number
 }
 
 interface Props {
@@ -105,7 +107,10 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
       ? durations.reduce((sum, s) => sum + (s.durationSeconds ?? 0), 0) / durations.length
       : null
 
-    return { honor, avgScore, bestScore, byDay, currentStreak, longestStreak, cat, sessionsWithResults, grades, avgDuration }
+    // Lifetime brilliant finds
+    const brilliants = sessions.reduce((sum, s) => sum + (s.brilliants ?? 0), 0)
+
+    return { honor, avgScore, bestScore, byDay, currentStreak, longestStreak, cat, sessionsWithResults, grades, avgDuration, brilliants }
   }, [sessions])
 
   const { rank, next, progress, honorToNext } = getRankProgress(stats.honor)
@@ -209,7 +214,7 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
       </div>
 
       {/* ── Stat strip ── */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3.5 mb-8">
         {[
           { k: String(sessions.length), v: 'reviews', emoji: '📝' },
           { k: String(stats.avgScore), v: 'avg score', emoji: '🎯' },
@@ -224,6 +229,18 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
             <p className="text-[11px] font-semibold text-ink-3 mt-1">{s.v}</p>
           </div>
         ))}
+        {/* The standout: brilliant finds — flaws caught that we never planted */}
+        <div
+          className="bg-hi-soft border-2.5 border-ink rounded-pop-lg shadow-hard-sm p-4 text-center max-md:col-span-2"
+          title="Genuine flaws you caught that the generator never intentionally planted"
+        >
+          <p className="text-xs mb-1">✨</p>
+          <p className="font-display font-extrabold text-2xl">
+            {stats.brilliants}
+            <span className="font-mono text-brand-dark ml-1">!!</span>
+          </p>
+          <p className="text-[11px] font-bold text-ink-2 mt-1">brilliant</p>
+        </div>
       </div>
 
       {/* ── Contribution graph ── */}
@@ -375,6 +392,14 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
                     {s.durationSeconds ? ` · ${formatDuration(s.durationSeconds)}` : ''}
                   </p>
                 </div>
+                {s.brilliants > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 font-mono font-bold text-[11px] bg-hi-soft border-2 border-ink rounded-full px-2 py-0.5 shrink-0"
+                    title={`${s.brilliants} brilliant find${s.brilliants !== 1 ? 's' : ''}`}
+                  >
+                    ✨ {s.brilliants}!!
+                  </span>
+                )}
                 <span className="font-mono font-bold text-xs text-brand shrink-0">
                   +{s.score} honor
                 </span>
