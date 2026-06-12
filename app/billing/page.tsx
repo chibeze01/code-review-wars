@@ -32,7 +32,7 @@ export default async function BillingPage({
   const credits = profileResult.data?.credits ?? 0
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f3]">
+    <div className="min-h-screen bg-cream text-ink">
       <AppNav credits={credits} />
       <BillingClient
         credits={credits}

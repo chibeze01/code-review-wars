@@ -127,47 +127,47 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
   const isEvaluating = phase === 'evaluating'
 
   return (
-    <div className="h-screen bg-[#0a0a0a] text-[#f5f5f3] flex flex-col">
+    <div className="h-screen bg-cream text-ink flex flex-col">
       <AppNav credits={credits} />
 
       <div className="flex flex-1 overflow-hidden min-h-0">
-        <aside className="w-80 shrink-0 border-r border-white/10 bg-[#0d0d0d] overflow-y-auto p-5 flex flex-col gap-5">
+        <aside className="w-80 shrink-0 border-r-2.5 border-ink bg-cream-2/60 overflow-y-auto p-5 flex flex-col gap-5">
           {(() => {
             const { rank, next, progress, honorToNext } = getRankProgress(honor)
             return (
-              <div className="bg-[#101010] border border-white/10 p-4">
+              <div className="card-pop p-4">
                 <div className="flex items-center gap-3">
                   <RankBadge rank={rank} size="lg" />
                   <div className="min-w-0">
-                    <p className="text-sm font-black uppercase italic tracking-tight truncate">{rank.title}</p>
-                    <p className="text-xs text-neutral-500">
-                      <span className="text-[#ccff00] font-bold">{honor}</span> honor
+                    <p className="font-display font-extrabold text-sm truncate">{rank.title}</p>
+                    <p className="text-xs text-ink-2">
+                      <span className="text-brand font-bold">{honor}</span> honor
                     </p>
                   </div>
                 </div>
                 {next && (
                   <div className="mt-3">
-                    <div className="w-full h-1.5 bg-white/10 overflow-hidden">
+                    <div className="w-full h-2.5 bg-cream-2 border-2 border-ink rounded-full overflow-hidden">
                       <div
-                        className="h-full transition-all duration-700"
-                        style={{ width: `${Math.round(progress * 100)}%`, background: `linear-gradient(90deg, #ccff00, ${next.color})` }}
+                        className="h-full bg-brand transition-all duration-700"
+                        style={{ width: `${Math.round(progress * 100)}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-neutral-600 mt-1.5">
+                    <p className="text-[11px] text-ink-2 mt-1.5">
                       {honorToNext} honor to <span style={{ color: next.color }} className="font-bold">{next.label}</span>
                     </p>
                   </div>
                 )}
-                <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
+                <div className="mt-3 pt-3 border-t-2 border-cream-2 grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-base font-black italic leading-none">{reviews}</p>
-                    <p className="text-[10px] uppercase tracking-widest text-neutral-600 mt-1">reviews</p>
+                    <p className="font-display font-extrabold text-base leading-none">{reviews}</p>
+                    <p className="text-[10px] font-semibold text-ink-3 mt-1">reviews</p>
                   </div>
                   <div>
-                    <p className="text-base font-black italic leading-none">
+                    <p className="font-display font-extrabold text-base leading-none">
                       {reviews > 0 ? Math.round(honor / reviews) : '—'}
                     </p>
-                    <p className="text-[10px] uppercase tracking-widest text-neutral-600 mt-1">avg score</p>
+                    <p className="text-[10px] font-semibold text-ink-3 mt-1">avg score</p>
                   </div>
                 </div>
               </div>
@@ -175,13 +175,13 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
           })()}
 
           <div>
-            <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-3">Session setup</h2>
+            <h2 className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2 mb-3">Session setup</h2>
             <SessionSetupPanel onGenerate={handleGenerate} loading={isGenerating} credits={credits} />
           </div>
 
           {phase !== 'setup' && (
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-600 mb-2">Progress</p>
+            <div className="mt-4 border-t-2 border-ink/10 pt-4">
+              <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2 mb-2">Progress</p>
               <div className="flex flex-col gap-1.5">
                 {(
                   [
@@ -197,14 +197,14 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
                   return (
                     <div
                       key={key}
-                      className={`flex items-center gap-2 text-xs py-0.5 font-bold uppercase tracking-wider ${
-                        isActive ? 'text-[#ccff00]' : isDone ? 'text-neutral-500' : 'text-neutral-700'
+                      className={`flex items-center gap-2 text-[13px] py-0.5 font-bold ${
+                        isActive ? 'text-brand' : isDone ? 'text-ink-2' : 'text-ink-3'
                       }`}
                     >
-                      <div className={`w-1.5 h-1.5 rotate-45 shrink-0 ${
-                        isActive ? 'bg-[#ccff00]' : isDone ? 'bg-neutral-600' : 'bg-neutral-800'
+                      <div className={`w-2 h-2 rounded-full shrink-0 border-2 border-ink ${
+                        isActive ? 'bg-brand' : isDone ? 'bg-ink-3' : 'bg-cream-2'
                       }`} />
-                      {label}
+                      {label} {isDone && '✓'}
                     </div>
                   )
                 })}
@@ -213,8 +213,8 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
           )}
 
           {phase === 'reviewing' && (
-            <div className="mt-auto border-t border-white/10 pt-4">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-600 mb-2">How to annotate</p>
+            <div className="mt-auto bg-hi-soft border-2.5 border-ink rounded-pop p-4">
+              <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] mb-2">💡 How to annotate</p>
               <ol className="flex flex-col gap-2">
                 {[
                   'Select any lines in the code editor',
@@ -224,8 +224,8 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
                   'Repeat for every issue you find',
                   'Add general notes below, then Submit',
                 ].map((step, i) => (
-                  <li key={i} className="text-xs text-neutral-600 flex gap-2">
-                    <span className="text-neutral-700 shrink-0 font-mono">{i + 1}.</span>
+                  <li key={i} className="text-xs text-ink-2 flex gap-2">
+                    <span className="font-mono font-bold shrink-0">{i + 1}.</span>
                     {step}
                   </li>
                 ))}
@@ -233,32 +233,24 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
             </div>
           )}
 
-          <div className="mt-auto border-t border-white/10 pt-4">
+          <div className="mt-auto border-t-2 border-ink/10 pt-4">
             <Link
               href="/dashboard/history"
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neutral-600 hover:text-[#ccff00] transition-colors"
+              className="flex items-center gap-2 text-[13px] font-bold text-ink-2 hover:text-brand transition-colors"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              View review history
+              🕐 View review history
             </Link>
           </div>
         </aside>
 
         <main className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="mb-5 border border-[#cf0a2c]/50 bg-[#cf0a2c]/10 px-4 py-3 text-sm text-[#ff5a73] flex items-start gap-2">
-              <svg className="shrink-0 mt-0.5 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
+            <div className="mb-5 border-2.5 border-ink rounded-pop bg-coral-soft px-4 py-3 text-sm font-medium flex items-start gap-2.5 shadow-hard-sm">
+              <span>⚠️</span>
               <span>{error}</span>
               {error.toLowerCase().includes('credit') && (
-                <Link href="/billing" className="ml-auto text-[#ccff00] hover:underline shrink-0 text-xs font-black uppercase italic">
-                  Refuel →
+                <Link href="/billing" className="ml-auto font-display font-bold text-brand hover:underline shrink-0 text-sm">
+                  Top up →
                 </Link>
               )}
             </div>
@@ -268,40 +260,36 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center gap-4">
               {isGenerating ? (
                 <>
-                  <div className="w-12 h-12 rounded-full border-2 border-[#ccff00] border-t-transparent animate-spin" />
-                  <p className="text-neutral-400 text-sm uppercase tracking-wider font-bold">Generating your challenge…</p>
+                  <div className="w-12 h-12 rounded-full border-4 border-ink border-t-brand animate-spin" />
+                  <p className="font-display font-bold text-ink-2">Generating your challenge…</p>
                 </>
               ) : (
                 <>
-                  <div className="flex items-center gap-3">
-                    <span className="h-px w-10 bg-[#ccff00]" />
-                    <span className="text-xs font-bold uppercase tracking-[0.3em] text-[#ccff00]">The dojo floor</span>
-                    <span className="h-px w-10 bg-[#ccff00]" />
-                  </div>
-                  <h2 className="text-3xl font-black uppercase italic tracking-tighter">
-                    Ready to practice<span className="text-[#ccff00]">?</span>
+                  <div className="tag-pop">⚔️ The review arena</div>
+                  <h2 className="font-display font-extrabold leading-[1.04] text-3xl md:text-4xl">
+                    Ready to <span className="mark-hi">catch bugs?</span>
                   </h2>
-                  <p className="text-neutral-500 text-sm max-w-md">
-                    Choose a language and scenario in the sidebar, then generate a code snippet.
+                  <p className="text-ink-2 text-[15px] max-w-md leading-relaxed">
+                    Choose a language and domain in the sidebar, then generate a code snippet.
                     Annotate lines directly in the editor and submit for AI evaluation.
                   </p>
                   {credits === 0 && (
-                    <div className="mt-2 border border-[#cf0a2c]/50 bg-[#cf0a2c]/10 px-4 py-3 text-sm text-[#ff5a73]">
+                    <div className="mt-2 border-2.5 border-ink rounded-pop bg-coral-soft px-4 py-3 text-sm font-medium shadow-hard-sm">
                       You have no credits remaining.{' '}
-                      <Link href="/billing" className="font-black uppercase italic text-[#ccff00] hover:underline">Refuel →</Link>
+                      <Link href="/billing" className="font-display font-bold text-brand hover:underline">Top up →</Link>
                     </div>
                   )}
-                  <div className="mt-4 grid grid-cols-4 gap-3 max-w-lg w-full">
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3.5 max-w-lg w-full">
                     {[
                       { icon: '⚡', label: 'Real code',    sub: 'Production-style snippets' },
                       { icon: '🐛', label: 'Hidden bugs',  sub: 'Subtle, realistic issues' },
                       { icon: '💬', label: 'Inline notes', sub: 'Annotate specific lines' },
                       { icon: '🎯', label: 'AI grading',   sub: 'Detailed feedback' },
                     ].map((item) => (
-                      <div key={item.label} className="bg-[#101010] border border-white/10 p-3 text-center hover:border-[#ccff00]/40 transition-colors">
+                      <div key={item.label} className="card-pop !shadow-hard-sm p-3 text-center">
                         <div className="text-xl mb-1">{item.icon}</div>
-                        <p className="text-xs font-black uppercase italic tracking-tight text-neutral-200">{item.label}</p>
-                        <p className="text-[11px] text-neutral-600 mt-0.5">{item.sub}</p>
+                        <p className="font-display font-bold text-xs">{item.label}</p>
+                        <p className="text-[11px] text-ink-3 mt-0.5">{item.sub}</p>
                       </div>
                     ))}
                   </div>

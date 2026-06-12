@@ -38,12 +38,13 @@ export const decorationField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 })
 
+// Light "indie" palette — soft tinted backgrounds, strong bars, dark readable text
 export const COMMENT_COLORS = [
-  { bg: 'rgba(124, 58, 237, 0.10)', bar: '#7c3aed', text: '#c4b5fd', badge: 'rgba(124,58,237,0.25)' },
-  { bg: 'rgba(5,  150, 105, 0.10)', bar: '#059669', text: '#6ee7b7', badge: 'rgba(5,150,105,0.25)' },
-  { bg: 'rgba(217,119,  6, 0.10)', bar: '#d97706', text: '#fcd34d', badge: 'rgba(217,119,6,0.25)'  },
-  { bg: 'rgba(37, 99,  235, 0.10)', bar: '#2563eb', text: '#93c5fd', badge: 'rgba(37,99,235,0.25)' },
-  { bg: 'rgba(225, 29, 72, 0.10)', bar: '#e11d48', text: '#fda4af', badge: 'rgba(225,29,72,0.25)'  },
+  { bg: 'rgba(124, 58, 237, 0.08)', bar: '#7c3aed', text: '#5b21b6', badge: 'rgba(124,58,237,0.14)' },
+  { bg: 'rgba(22, 163, 74,  0.08)', bar: '#16a34a', text: '#0f7a37', badge: 'rgba(22,163,74,0.14)'  },
+  { bg: 'rgba(202,138, 4,   0.10)', bar: '#ca8a04', text: '#854d0e', badge: 'rgba(202,138,4,0.16)'  },
+  { bg: 'rgba(59, 130, 246, 0.08)', bar: '#3b82f6', text: '#1e40af', badge: 'rgba(59,130,246,0.14)' },
+  { bg: 'rgba(255,106, 61,  0.10)', bar: '#ff6a3d', text: '#c2410c', badge: 'rgba(255,106,61,0.16)' },
 ] as const
 
 export interface CommentDeco {

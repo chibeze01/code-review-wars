@@ -3,10 +3,7 @@
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { RankBadge } from './RankBadge'
-import { getRankProgress } from '@/lib/ranks'
-
-const VOLT = '#ccff00'
-const RED = '#cf0a2c'
+import { getRankProgress, GRADE_COLORS } from '@/lib/ranks'
 
 export interface SessionSummary {
   id: string
@@ -27,12 +24,15 @@ interface Props {
 
 const CATEGORIES = ['security', 'bug', 'logic', 'performance', 'error-handling', 'style'] as const
 
-const GRADE_COLORS: Record<string, string> = {
-  A: VOLT,
-  B: '#8fb33c',
-  C: '#8a8a8a',
-  D: '#b46a2a',
-  F: RED,
+// Handoff semantic mapping: security → purple, bug → coral, perf → yellow,
+// errors → blue, logic → green, style → ink-2
+const CATEGORY_COLORS: Record<string, string> = {
+  security: '#7c3aed',
+  bug: '#ff6a3d',
+  performance: '#ca8a04',
+  'error-handling': '#3b82f6',
+  logic: '#16a34a',
+  style: '#57534e',
 }
 
 function dayKey(d: Date): string {
@@ -139,102 +139,101 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
     return { weeks, monthLabels }
   }, [stats.byDay])
 
+  // Heatmap levels — tints of brand green on a light base (handoff 7b)
   function cellColor(count: number, isFuture: boolean): string {
     if (isFuture) return 'transparent'
-    if (count === 0) return 'rgba(255,255,255,0.07)'
-    if (count === 1) return '#3f4d00'
-    if (count === 2) return '#7a9400'
-    if (count === 3) return '#a8c800'
-    return VOLT
+    if (count === 0) return '#eeeae2'
+    if (count === 1) return '#bbf0cd'
+    if (count === 2) return '#7ddf9f'
+    if (count === 3) return '#3cc06e'
+    return '#16a34a'
   }
 
   const recent = sessions.slice(0, 5)
   const maxGrade = Math.max(1, ...Object.values(stats.grades))
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
+    <div className="max-w-[1140px] mx-auto px-[22px] py-10">
       {/* ── Header row: greeting + rank card ── */}
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 mb-8">
         <div className="flex flex-col justify-center">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="h-px w-10" style={{ background: VOLT }} />
-            <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: VOLT }}>
-              The dojo
-            </span>
+          <div className="font-display font-bold text-sm text-brand uppercase tracking-[0.08em] mb-3">
+            your training ground
           </div>
-          <h1 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter leading-none mb-3">
-            Welcome back<span style={{ color: VOLT }}>.</span>
+          <h1 className="font-display font-extrabold leading-[1.04] text-4xl md:text-5xl">
+            Welcome <span className="mark-hi">back.</span>
           </h1>
-          <p className="text-sm text-neutral-500">{email}</p>
+          <p className="text-sm text-ink-3 mt-3">{email}</p>
           <div className="mt-6 flex items-center gap-4 flex-wrap">
-            <Link
-              href="/dashboard/train"
-              className="inline-block bg-[#ccff00] hover:bg-[#b9eb00] text-black px-7 py-3.5 font-black uppercase italic tracking-tight -skew-x-6 transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_36px_-10px_#ccff00aa]"
-            >
-              <span className="inline-block skew-x-6">Start training →</span>
+            <Link href="/dashboard/train" className="btn-pop btn-pop-green">
+              🎯 Start a review
+            </Link>
+            <Link href="/dashboard/history" className="btn-pop">
+              View history
             </Link>
             {credits === 0 && (
-              <Link href="/billing" className="text-xs font-bold uppercase tracking-wider hover:underline" style={{ color: RED }}>
-                Out of credits — refuel →
+              <Link href="/billing" className="font-bold text-sm text-coral hover:underline">
+                Out of credits — top up →
               </Link>
             )}
           </div>
         </div>
 
-        <div className="border border-white/10 bg-[#101010] p-6">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-4">Your rank</p>
+        <div className="card-pop p-6">
+          <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-3 mb-4">Your rank</p>
           <div className="flex items-center gap-4 mb-5">
             <RankBadge rank={rank} size="lg" />
             <div>
-              <p className="text-base font-black uppercase italic tracking-tight">{rank.title}</p>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                <span className="font-bold" style={{ color: VOLT }}>{stats.honor}</span> honor
+              <p className="font-display font-extrabold text-base">{rank.title}</p>
+              <p className="text-xs text-ink-2 mt-0.5">
+                <span className="font-bold text-brand">{stats.honor}</span> honor
               </p>
             </div>
           </div>
           {next ? (
             <>
-              <div className="h-2 bg-white/10 overflow-hidden mb-2">
+              <div className="h-3 bg-cream-2 border-2 border-ink rounded-full overflow-hidden mb-2">
                 <div
-                  className="h-full transition-all duration-700"
-                  style={{ width: `${Math.round(progress * 100)}%`, background: `linear-gradient(90deg, ${VOLT}, ${next.color})` }}
+                  className="h-full bg-brand transition-all duration-700"
+                  style={{ width: `${Math.round(progress * 100)}%` }}
                 />
               </div>
-              <p className="text-[11px] text-neutral-600">
+              <p className="text-xs text-ink-2">
                 {honorToNext} honor to <span style={{ color: next.color }} className="font-bold">{next.label} — {next.title}</span>
               </p>
             </>
           ) : (
-            <p className="text-[11px]" style={{ color: RED }}>Highest rank achieved. You are the sensei now.</p>
+            <p className="text-xs font-bold text-coral">Highest rank achieved. You are the sensei now. 🥋</p>
           )}
         </div>
       </div>
 
-      {/* ── Stat band ── */}
-      <div className="grid grid-cols-2 md:grid-cols-6 border border-white/10 divide-x divide-white/10 mb-8">
+      {/* ── Stat strip ── */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5 mb-8">
         {[
-          { k: String(sessions.length), v: 'reviews' },
-          { k: String(stats.avgScore), v: 'avg score' },
-          { k: String(stats.bestScore), v: 'best score' },
-          { k: String(stats.currentStreak), v: 'day streak' },
-          { k: String(stats.longestStreak), v: 'longest streak' },
-          { k: stats.avgDuration ? formatDuration(stats.avgDuration) : '—', v: 'avg review time' },
+          { k: String(sessions.length), v: 'reviews', emoji: '📝' },
+          { k: String(stats.avgScore), v: 'avg score', emoji: '🎯' },
+          { k: String(stats.bestScore), v: 'best score', emoji: '🏆' },
+          { k: String(stats.currentStreak), v: 'day streak', emoji: '🔥' },
+          { k: String(stats.longestStreak), v: 'longest streak', emoji: '📈' },
+          { k: stats.avgDuration ? formatDuration(stats.avgDuration) : '—', v: 'avg time', emoji: '⏱️' },
         ].map((s) => (
-          <div key={s.v} className="p-4 text-center max-md:border-b max-md:border-white/10">
-            <p className="text-2xl font-black italic" style={{ color: VOLT }}>{s.k}</p>
-            <p className="text-[10px] uppercase tracking-widest text-neutral-500 mt-1.5">{s.v}</p>
+          <div key={s.v} className="card-pop !shadow-hard-sm p-4 text-center">
+            <p className="text-xs mb-1">{s.emoji}</p>
+            <p className="font-display font-extrabold text-2xl">{s.k}</p>
+            <p className="text-[11px] font-semibold text-ink-3 mt-1">{s.v}</p>
           </div>
         ))}
       </div>
 
       {/* ── Contribution graph ── */}
-      <div className="border border-white/10 bg-[#101010] p-6 mb-8">
+      <div className="card-pop p-6 mb-8">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-black uppercase italic tracking-tight">Training activity</h2>
-          <div className="flex items-center gap-1.5 text-[10px] text-neutral-600">
+          <h2 className="font-display font-extrabold text-lg">Training activity</h2>
+          <div className="flex items-center gap-1.5 text-[11px] text-ink-3 font-medium">
             less
             {[0, 1, 2, 3, 4].map((n) => (
-              <span key={n} className="w-2.5 h-2.5 inline-block" style={{ background: cellColor(n, false) }} />
+              <span key={n} className="w-2.5 h-2.5 inline-block rounded-[3px]" style={{ background: cellColor(n, false) }} />
             ))}
             more
           </div>
@@ -245,7 +244,7 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
               {grid.weeks.map((_, w) => {
                 const label = grid.monthLabels.find((m) => m.col === w)
                 return (
-                  <span key={w} className="w-[11px] text-[9px] text-neutral-600 overflow-visible whitespace-nowrap">
+                  <span key={w} className="w-[11px] text-[9px] text-ink-3 overflow-visible whitespace-nowrap">
                     {label?.label ?? ''}
                   </span>
                 )
@@ -254,7 +253,7 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
             <div className="flex gap-[3px]">
               <div className="flex flex-col gap-[3px] w-7 mr-1">
                 {['', 'Mon', '', 'Wed', '', 'Fri', ''].map((d, i) => (
-                  <span key={i} className="h-[11px] text-[9px] text-neutral-600 leading-[11px]">{d}</span>
+                  <span key={i} className="h-[11px] text-[9px] text-ink-3 leading-[11px]">{d}</span>
                 ))}
               </div>
               {grid.weeks.map((col, w) => (
@@ -263,7 +262,7 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
                     <span
                       key={d}
                       title={cell.date ? `${cell.count} review${cell.count !== 1 ? 's' : ''} · ${cell.date.toDateString()}` : undefined}
-                      className="w-[11px] h-[11px] inline-block"
+                      className="w-[11px] h-[11px] inline-block rounded-[3px]"
                       style={{ background: cellColor(cell.count, cell.date === null) }}
                     />
                   ))}
@@ -277,16 +276,16 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
       {/* ── Skills + grades ── */}
       <div className="grid lg:grid-cols-2 gap-6 mb-8">
         {/* Category catch rates */}
-        <div className="border border-white/10 bg-[#101010] p-6">
-          <h2 className="text-sm font-black uppercase italic tracking-tight mb-1">Bug-hunting skills</h2>
-          <p className="text-[11px] text-neutral-600 mb-5">Catch rate by issue category</p>
+        <div className="card-pop p-6">
+          <h2 className="font-display font-extrabold text-lg mb-1">Bug-hunting skills</h2>
+          <p className="text-xs text-ink-3 mb-5">Catch rate by issue category</p>
           {stats.sessionsWithResults === 0 ? (
-            <div className="border border-dashed border-white/15 p-6 text-center">
-              <p className="text-xs text-neutral-500 leading-relaxed">
+            <div className="border-2 border-dashed border-ink/20 rounded-pop p-6 text-center">
+              <p className="text-sm text-ink-2 leading-relaxed">
                 No category data yet — finish a training session and your
                 per-category performance shows up here.
               </p>
-              <Link href="/dashboard/train" className="inline-block mt-3 text-xs font-black uppercase italic" style={{ color: VOLT }}>
+              <Link href="/dashboard/train" className="inline-block mt-3 font-display font-bold text-sm text-brand hover:underline">
                 Train now →
               </Link>
             </div>
@@ -295,20 +294,21 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
               {CATEGORIES.map((c) => {
                 const { found, total } = stats.cat[c]
                 const pct = total > 0 ? Math.round((found / total) * 100) : null
+                const color = CATEGORY_COLORS[c] ?? '#57534e'
                 return (
                   <div key={c}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">{categoryLabel(c)}</span>
-                      <span className="text-[11px] font-mono text-neutral-500">
+                      <span className="text-[13px] font-bold flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: color }} />
+                        {categoryLabel(c)}
+                      </span>
+                      <span className="text-xs font-mono text-ink-2">
                         {total > 0 ? `${found}/${total} · ${pct}%` : 'no data'}
                       </span>
                     </div>
-                    <div className="h-2 bg-white/5 overflow-hidden flex">
+                    <div className="h-3 bg-cream-2 border-2 border-ink rounded-full overflow-hidden">
                       {total > 0 && (
-                        <>
-                          <div className="h-full transition-all duration-700" style={{ width: `${pct}%`, background: VOLT }} />
-                          <div className="h-full transition-all duration-700" style={{ width: `${100 - (pct ?? 0)}%`, background: `${RED}55` }} />
-                        </>
+                        <div className="h-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
                       )}
                     </div>
                   </div>
@@ -319,21 +319,21 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
         </div>
 
         {/* Grade distribution */}
-        <div className="border border-white/10 bg-[#101010] p-6">
-          <h2 className="text-sm font-black uppercase italic tracking-tight mb-1">Grade distribution</h2>
-          <p className="text-[11px] text-neutral-600 mb-5">Across all {sessions.length} review{sessions.length !== 1 ? 's' : ''}</p>
+        <div className="card-pop p-6">
+          <h2 className="font-display font-extrabold text-lg mb-1">Grade distribution</h2>
+          <p className="text-xs text-ink-3 mb-5">Across all {sessions.length} review{sessions.length !== 1 ? 's' : ''}</p>
           <div className="flex items-end justify-around gap-4 h-44 pt-2">
             {(['A', 'B', 'C', 'D', 'F'] as const).map((g) => {
               const count = stats.grades[g]
-              const h = count > 0 ? Math.max(10, (count / maxGrade) * 130) : 3
+              const h = count > 0 ? Math.max(10, (count / maxGrade) * 130) : 4
               return (
                 <div key={g} className="flex flex-col items-center gap-2 flex-1">
-                  <span className="text-xs font-mono text-neutral-500">{count}</span>
+                  <span className="text-xs font-mono font-bold text-ink-2">{count}</span>
                   <div
-                    className="w-full max-w-[48px] transition-all duration-700"
-                    style={{ height: `${h}px`, background: count > 0 ? GRADE_COLORS[g] : 'rgba(255,255,255,0.08)' }}
+                    className={`w-full max-w-[48px] rounded-t-md transition-all duration-700 ${count > 0 ? 'border-2 border-b-0 border-ink' : ''}`}
+                    style={{ height: `${h}px`, background: count > 0 ? GRADE_COLORS[g] : '#eeeae2' }}
                   />
-                  <span className="text-sm font-black italic" style={{ color: GRADE_COLORS[g] }}>{g}</span>
+                  <span className="font-display font-extrabold text-sm" style={{ color: GRADE_COLORS[g] }}>{g}</span>
                 </div>
               )
             })}
@@ -342,44 +342,43 @@ export function DashboardOverview({ email, credits, sessions }: Props) {
       </div>
 
       {/* ── Recent sessions ── */}
-      <div className="border border-white/10 bg-[#101010] p-6">
+      <div className="card-pop p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-black uppercase italic tracking-tight">Recent sessions</h2>
-          <Link href="/dashboard/history" className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 hover:text-white transition-colors">
+          <h2 className="font-display font-extrabold text-lg">Recent reviews</h2>
+          <Link href="/dashboard/history" className="font-display font-bold text-sm text-ink-2 hover:text-ink transition-colors">
             Full history →
           </Link>
         </div>
         {recent.length === 0 ? (
-          <div className="border border-dashed border-white/15 p-10 text-center">
-            <p className="text-sm text-neutral-500 mb-4">No reviews yet. The dojo is waiting.</p>
-            <Link
-              href="/dashboard/train"
-              className="inline-block bg-[#ccff00] hover:bg-[#b9eb00] text-black px-6 py-3 font-black uppercase italic tracking-tight -skew-x-6 transition-all"
-            >
-              <span className="inline-block skew-x-6">First session →</span>
+          <div className="border-2 border-dashed border-ink/20 rounded-pop p-10 text-center">
+            <p className="text-sm text-ink-2 mb-4">No reviews yet. Your first bug is waiting. 🐛</p>
+            <Link href="/dashboard/train" className="btn-pop btn-pop-green">
+              First session →
             </Link>
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div className="divide-y-2 divide-cream-2">
             {recent.map((s) => (
-              <div key={s.id} className="py-3 flex items-center gap-4">
+              <Link key={s.id} href={`/dashboard/history/${s.id}`} className="py-3 flex items-center gap-4 group">
                 <span
-                  className="w-9 h-9 border-2 bg-[#0a0a0a] flex items-center justify-center text-sm font-black shrink-0"
-                  style={{ borderColor: GRADE_COLORS[s.grade] ?? '#555', color: GRADE_COLORS[s.grade] ?? '#999' }}
+                  className="w-9 h-9 border-2.5 border-ink rounded-[10px] bg-paper flex items-center justify-center text-sm font-display font-extrabold shrink-0 shadow-hard-sm"
+                  style={{ color: GRADE_COLORS[s.grade] ?? '#57534e' }}
                 >
                   {s.grade}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-neutral-200 truncate">{s.scenario ?? 'Code review session'}</p>
-                  <p className="text-[11px] text-neutral-600 mt-0.5">
+                  <p className="text-sm font-medium truncate group-hover:text-brand transition-colors">
+                    {s.scenario ?? 'Code review session'}
+                  </p>
+                  <p className="text-xs text-ink-3 mt-0.5">
                     {s.language} · {new Date(s.createdAt).toLocaleDateString()}
                     {s.durationSeconds ? ` · ${formatDuration(s.durationSeconds)}` : ''}
                   </p>
                 </div>
-                <span className="text-xs font-black italic shrink-0" style={{ color: VOLT }}>
+                <span className="font-mono font-bold text-xs text-brand shrink-0">
                   +{s.score} honor
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         )}

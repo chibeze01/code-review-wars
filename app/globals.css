@@ -1,3 +1,138 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --ink: #1c1917;
+  --ink-2: #57534e;
+  --ink-3: #8a827b;
+  --cream: #fffaf0;
+  --cream-2: #fff2dc;
+  --paper: #ffffff;
+  --green: #16a34a;
+  --green-d: #0f7a37;
+  --green-soft: #dcfce7;
+  --yellow: #ffd43b;
+  --yellow-soft: #fff3c4;
+  --coral: #ff6a3d;
+  --coral-soft: #ffe2d6;
+  --blue: #3b82f6;
+  --purple: #7c3aed;
+  --bd: 2.5px solid var(--ink);
+  --sh: 5px 5px 0 var(--ink);
+  --sh-sm: 3px 3px 0 var(--ink);
+  --sh-lg: 8px 8px 0 var(--ink);
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--yellow);
+}
+
+@layer components {
+  /* Pushable 3D button — the signature interaction */
+  .btn-pop {
+    @apply inline-flex items-center justify-center gap-2 font-display font-bold text-base
+      px-6 py-3.5 border-2.5 border-ink rounded-pop bg-paper text-ink shadow-hard
+      whitespace-nowrap select-none;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .btn-pop:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .btn-pop:active:not(:disabled) {
+    transform: translate(5px, 5px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+  .btn-pop:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  .btn-pop-green {
+    @apply bg-brand text-white;
+  }
+  .btn-pop-yellow {
+    @apply bg-hi text-ink;
+  }
+  .btn-pop-lg {
+    @apply text-[19px] px-8 py-[18px] rounded-pop-lg;
+  }
+  .btn-pop-sm {
+    @apply text-sm px-4 py-2 shadow-hard-sm;
+  }
+  .btn-pop-sm:hover:not(:disabled) {
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .btn-pop-sm:active:not(:disabled) {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+
+  /* Card */
+  .card-pop {
+    @apply bg-paper border-2.5 border-ink rounded-pop-lg shadow-hard;
+  }
+
+  /* Pill tag (hero eyebrow, credits chip) */
+  .tag-pop {
+    @apply inline-flex items-center gap-1.5 font-display font-bold text-[13px]
+      px-3 py-1.5 border-2.5 border-ink rounded-full bg-paper shadow-hard-sm whitespace-nowrap;
+  }
+
+  /* Initials avatar */
+  .av-pop {
+    @apply w-10 h-10 rounded-full border-2.5 border-ink grid place-items-center
+      font-mono font-bold text-sm text-ink flex-none;
+  }
+}
+
+/* Highlighter marker behind key words */
+.mark-hi {
+  position: relative;
+  white-space: nowrap;
+  z-index: 0;
+}
+.mark-hi::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 8%;
+  bottom: 6%;
+  background: var(--yellow);
+  transform: rotate(-1.4deg);
+  border-radius: 4px;
+  z-index: -1;
+}
+.mark-hi.mark-green::before {
+  background: var(--green-soft);
+}
+.mark-hi.mark-coral::before {
+  background: var(--coral-soft);
+}
+
+/* Rough coral underline wave */
+.u-wave {
+  position: relative;
+}
+.u-wave::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 7px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='7' viewBox='0 0 80 7'%3E%3Cpath d='M0 4 Q10 0 20 4 T40 4 T60 4 T80 4' fill='none' stroke='%23ff6a3d' stroke-width='2.5'/%3E%3C/svg%3E")
+    repeat-x;
+  background-size: auto 7px;
+}
+
+/* Display headings get tight tracking + leading by default */
+.font-display {
+  letter-spacing: -0.02em;
+}

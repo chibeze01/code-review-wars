@@ -18,54 +18,48 @@ export function AppNav({ credits }: Props) {
   const pathname = usePathname()
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0a]/85 backdrop-blur px-6 py-3.5 flex items-center justify-between">
-      <div className="flex items-center gap-8">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-[#ccff00] flex items-center justify-center text-black font-black text-xs -skew-x-6">
-            CR
-          </div>
-          <span className="text-sm font-black tracking-tight uppercase italic text-white hidden sm:block">
-            Code Review <span className="text-[#ccff00]">Wars</span>
+    <nav className="sticky top-0 z-50 bg-cream border-b-2.5 border-ink">
+      <div className="max-w-[1140px] mx-auto px-[22px] h-16 flex items-center gap-4">
+        <Link href="/dashboard" className="flex items-center gap-2 font-display font-extrabold text-lg text-ink">
+          <span className="w-[34px] h-[34px] border-2.5 border-ink rounded-[9px] bg-brand text-white grid place-items-center text-lg shadow-hard-sm">
+            ⚔️
           </span>
+          <span className="hidden sm:block">Code Review Wars</span>
         </Link>
-        <div className="flex items-center gap-1">
+
+        <div className="flex items-center gap-1 ml-2">
           {LINKS.map(({ href, label, exact }) => {
             const active = exact ? pathname === href : pathname.startsWith(href)
             return (
               <Link
                 key={href}
                 href={href}
-                className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${
-                  active
-                    ? 'text-black bg-[#ccff00] -skew-x-6'
-                    : 'text-neutral-400 hover:text-white'
+                className={`font-semibold text-[14.5px] px-3 py-2 rounded-[9px] transition-colors ${
+                  active ? 'bg-cream-2 text-ink' : 'text-ink-2 hover:text-ink hover:bg-cream-2'
                 }`}
               >
-                <span className={active ? 'inline-block skew-x-6' : ''}>{label}</span>
+                {label}
               </Link>
             )
           })}
         </div>
-      </div>
-      <div className="flex items-center gap-4">
-        <Link
-          href="/billing"
-          className={`text-xs font-black uppercase italic px-3 py-1.5 -skew-x-6 border transition-colors ${
-            credits === 0
-              ? 'border-[#cf0a2c] text-[#cf0a2c] hover:bg-[#cf0a2c]/10'
-              : 'border-[#ccff00]/50 text-[#ccff00] hover:bg-[#ccff00]/10'
-          }`}
-        >
-          <span className="inline-block skew-x-6">{credits} credit{credits !== 1 ? 's' : ''}</span>
-        </Link>
-        <form action="/api/auth/signout" method="post">
-          <button
-            type="submit"
-            className="text-xs text-neutral-600 hover:text-neutral-300 transition-colors uppercase tracking-wider font-bold"
+
+        <div className="ml-auto flex items-center gap-3">
+          <Link
+            href="/billing"
+            className={`tag-pop ${credits === 0 ? 'bg-coral-soft' : ''}`}
           >
-            Sign out
-          </button>
-        </form>
+            ✨ {credits} credit{credits !== 1 ? 's' : ''}
+          </Link>
+          <form action="/api/auth/signout" method="post">
+            <button
+              type="submit"
+              className="font-semibold text-sm text-ink-3 hover:text-ink transition-colors"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     </nav>
   )

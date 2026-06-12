@@ -1,479 +1,626 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { RANKS } from '@/lib/ranks'
-import { RankBadge } from '@/components/RankBadge'
 
-const VOLT = '#ccff00'
-const RED = '#cf0a2c'
+/* ────────────────────────────────────────────────────────────────────────────
+   Landing page — "indie" design (Marc Lou style).
+   Reference: handoff landing-indie.html. Copy is verbatim from the handoff;
+   pricing uses the real Stripe packs so checkout always matches the marketing.
+──────────────────────────────────────────────────────────────────────────── */
 
-// Interactive hero demo — three hidden bugs, 34 honor each (3 × 34 = 102 → crosses
-// the real 100-honor threshold for 7 kyu, same ladder the app uses)
-const HONOR_PER_BUG = 34
-const DEMO_BUGS: Record<number, string> = {
-  3: 'SQL injection — user input is interpolated straight into the query. Use a $1 placeholder.',
-  5: 'rows[0] can be undefined — this crashes on an invalid code. Guard before dereferencing.',
-  7: 'Hardcoded secret fallback — tokens become forgeable the moment the env var is missing.',
+const WRAP = 'max-w-[1140px] mx-auto px-[22px]'
+
+const PAIN_CARDS = [
+  {
+    emoji: '😰',
+    title: 'You blank on a 200-line PR',
+    body: 'The interviewer shares a diff and the clock starts. Where do you even look first?',
+  },
+  {
+    emoji: '🐛',
+    title: 'You spot the typo, miss the time-bomb',
+    body: 'Nice catch on the naming. Shame about the SQL injection and the race condition.',
+  },
+  {
+    emoji: '🥱',
+    title: 'Every LeetCode clone ignores review',
+    body: "You've ground 500 algo problems. None of them taught you to read someone else's code.",
+  },
+]
+
+const STEPS = [
+  {
+    emoji: '🎯',
+    title: 'Pick your poison',
+    body: 'Choose TypeScript or C# and the kind of system — fintech, healthcare, e-commerce. We generate real code that fits, with bugs baked in.',
+  },
+  {
+    emoji: '🔍',
+    title: 'Review like a real PR',
+    body: "Click any line to drop an inline comment. Flag the injection, the N+1, the broken auth — exactly how you'd review a teammate.",
+  },
+  {
+    emoji: '🏆',
+    title: 'Get graded instantly',
+    body: 'An AI staff engineer scores your review, shows what you missed, and coaches you up.',
+  },
+]
+
+const FEATURES = [
+  {
+    emoji: '🐛',
+    tile: 'bg-coral-soft',
+    title: 'Real hidden flaws',
+    body: 'Subtle bugs, injection, race conditions and N+1s — the stuff that actually slips into prod, not contrived puzzles.',
+  },
+  {
+    emoji: '⚖️',
+    tile: 'bg-hi-soft',
+    title: 'Severity-weighted scoring',
+    body: 'Critical issues score more than nits. Learn to triage like the clock is ticking and the on-call pager is hot.',
+  },
+  {
+    emoji: '📊',
+    tile: 'bg-brand-soft',
+    title: 'Track your eye',
+    body: "A GitHub-style heatmap, per-category skills and streaks show exactly where you're sharp — and where you're soft.",
+  },
+  {
+    emoji: '🏅',
+    tile: 'bg-[#dbeafe]',
+    title: 'Climb the ranks',
+    body: 'A Codewars-style ladder from 8 kyu to 1 dan. Ranked on accuracy and severity, not just speed.',
+  },
+  {
+    emoji: '✨',
+    tile: 'bg-[#ede9fe]',
+    title: 'Model answer every time',
+    body: 'See the ideal review after every session. Learn the senior-engineer reasoning, then go again.',
+  },
+  {
+    emoji: '🎓',
+    tile: 'bg-coral-soft',
+    title: 'Coaching that sticks',
+    body: 'Specific, actionable feedback on every review — what you caught, what you missed, and how to level up.',
+  },
+]
+
+const TESTIMONIALS = [
+  {
+    quote:
+      '"Bombed the review round at a staff loop. Did ~40 of these over two weeks and walked back in like I owned the codebase. Signed last Friday. 🎉"',
+    initials: 'JK',
+    fill: 'bg-brand text-white',
+    name: 'Jordan K.',
+    role: 'Staff Eng → Series B fintech',
+  },
+  {
+    quote:
+      '"Caught a race condition in my third session that I would absolutely have merged a month ago. This rewires how you read code."',
+    initials: 'AM',
+    fill: 'bg-coral text-white',
+    name: 'Aïsha M.',
+    role: 'Backend Engineer',
+  },
+  {
+    quote:
+      '"Finally something that isn\'t LeetCode. Reading real, ugly code under pressure is the skill nobody trains. This trains it."',
+    initials: 'SR',
+    fill: 'bg-accent-blue text-white',
+    name: 'Sam R.',
+    role: 'SWE II @ big tech',
+  },
+  {
+    quote:
+      '"I run a bootcamp and made this required prep. My students\' review-round pass rate went from ~40% to over 80%. Wild."',
+    initials: 'PL',
+    fill: 'bg-[#a78bfa] text-white',
+    name: 'Priya L.',
+    role: 'Bootcamp lead',
+  },
+  {
+    quote:
+      '"The severity weighting retrained my instincts. I stopped nitpicking variable names and started hunting for the stuff that pages you at 3am."',
+    initials: 'DV',
+    fill: 'bg-hi',
+    name: 'Dimitri V.',
+    role: 'Senior Platform Eng',
+  },
+  {
+    quote:
+      '"One-time payment, no subscription nonsense, and I actually got better. Easiest money I\'ve spent on my career this year."',
+    initials: 'TS',
+    fill: 'bg-coral text-white',
+    name: 'Tomás S.',
+    role: 'Full-stack dev',
+  },
+]
+
+// Real Stripe packs — keep in sync with /api/stripe/checkout
+const PACKS = [
+  {
+    name: 'Starter',
+    now: '$5',
+    was: '$10',
+    credits: '10 credits',
+    popular: false,
+    features: ['10 full review sessions', 'All languages & domains', 'Heatmap + skill tracking', 'Credits never expire'],
+    cta: 'Get Starter',
+  },
+  {
+    name: 'Standard',
+    now: '$18',
+    was: '$36',
+    credits: '50 credits',
+    popular: true,
+    features: ['50 full review sessions', 'Everything in Starter', 'Rank ladder to 1 dan', 'Best price-per-review'],
+    cta: 'Get Standard →',
+  },
+  {
+    name: 'Pro',
+    now: '$45',
+    was: '$90',
+    credits: '150 credits',
+    popular: false,
+    features: ['150 full review sessions', 'Everything in Standard', 'Early access to new domains', 'Train forever'],
+    cta: 'Get Pro',
+  },
+]
+
+const FAQS = [
+  {
+    q: 'Is this just LeetCode with extra steps?',
+    a: "Nope — the opposite. LeetCode trains you to write algorithms from scratch. Code Review Wars trains you to read real, messy production code under pressure and catch what's wrong. It's the skill the review round actually tests.",
+    open: true,
+  },
+  {
+    q: 'Which languages are supported?',
+    a: 'TypeScript and C# today, across domains like fintech, healthcare, e-commerce and realtime systems. More languages are rolling out.',
+    open: false,
+  },
+  {
+    q: 'Do credits expire?',
+    a: 'Never. Buy a pack once and use it whenever you\'re prepping. No subscription, no monthly drip, no "use it or lose it."',
+    open: false,
+  },
+  {
+    q: 'How does the AI grading work?',
+    a: 'Each challenge has real flaws planted with known severity. When you submit, we match your inline comments against them — rewarding correct catches, weighting by severity, and docking false positives.',
+    open: false,
+  },
+  {
+    q: 'Will this actually help me pass interviews?',
+    a: "That's the whole point. Reading and reviewing code is the one thing you do every single day at work — and the round almost nobody preps for. Five free sessions means there's zero risk in finding out.",
+    open: false,
+  },
+]
+
+function Countdown() {
+  const [secs, setSecs] = useState(72 * 3600)
+  useEffect(() => {
+    const id = setInterval(() => setSecs((s) => (s > 0 ? s - 1 : 72 * 3600)), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const h = String(Math.floor(secs / 3600)).padStart(2, '0')
+  const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0')
+  const s = String(secs % 60).padStart(2, '0')
+  return <span className="font-mono">{h}:{m}:{s}</span>
 }
 
-const MARQUEE_ITEMS = ['FIND THE BUG', 'EARN HONOR', 'RANK UP', 'REPEAT']
-
-export default function LandingPage() {
-  const tiltRef = useRef<HTMLDivElement>(null)
-  const [found, setFound] = useState<number[]>([])
-  const honor = found.length * HONOR_PER_BUG
-  const promoted = found.length === Object.keys(DEMO_BUGS).length
-
-  // Scroll-driven 3D perspective tilt: starts pitched back, flattens as it scrolls in
-  useEffect(() => {
-    const el = tiltRef.current
-    if (!el) return
-    let raf = 0
-    const update = () => {
-      const r = el.getBoundingClientRect()
-      const vh = window.innerHeight
-      const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.85)))
-      el.style.setProperty('--rx', `${(1 - p) * 24 + 2}deg`)
-      el.style.setProperty('--lift', `${(1 - p) * 30}px`)
-    }
-    const onScroll = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(update)
-    }
-    update()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
-      cancelAnimationFrame(raf)
-    }
-  }, [])
-
-  // Scroll-reveal animations
-  useEffect(() => {
-    const els = document.querySelectorAll('[data-reveal]')
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add('in')
-            io.unobserve(e.target)
-          }
-        })
-      },
-      { threshold: 0.15 },
-    )
-    els.forEach((el) => io.observe(el))
-    return () => io.disconnect()
-  }, [])
-
-  // Mouse-tracking tilt layered on top of the scroll tilt
-  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    const el = tiltRef.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    const x = (e.clientX - r.left) / r.width - 0.5
-    const y = (e.clientY - r.top) / r.height - 0.5
-    el.style.setProperty('--ry', `${x * 8}deg`)
-    el.style.setProperty('--rx2', `${-y * 5}deg`)
-  }
-  function handlePointerLeave() {
-    const el = tiltRef.current
-    if (!el) return
-    el.style.setProperty('--ry', '0deg')
-    el.style.setProperty('--rx2', '0deg')
-  }
-
-  function toggleBug(line: number) {
-    setFound((f) => (f.includes(line) ? f : [...f, line]))
-  }
-
-  const sqlLine = "`SELECT * FROM coupons WHERE code = '${code}'`"
-
+function Logo({ light = false }: { light?: boolean }) {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f3] overflow-x-hidden">
-      <style>{`
-        @keyframes cw-marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-        @keyframes cw-float { 0%,100% { transform: translateY(0) rotate(45deg) } 50% { transform: translateY(-14px) rotate(45deg) } }
-        @keyframes cw-float2 { 0%,100% { transform: translateY(0) } 50% { transform: translateY(10px) } }
-        @keyframes cw-blink { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
-        @keyframes cw-pop { 0% { transform: scale(.6); opacity: 0 } 60% { transform: scale(1.08) } 100% { transform: scale(1); opacity: 1 } }
-        .cw-marquee-track { animation: cw-marquee 22s linear infinite; }
-        .cw-marquee-track.rev { animation-direction: reverse; }
-        [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
-        [data-reveal].in { opacity: 1; transform: translateY(0); }
-        .cw-tilt {
-          transform: perspective(1400px)
-            rotateX(calc(var(--rx, 14deg) + var(--rx2, 0deg)))
-            rotateY(var(--ry, 0deg))
-            translateY(var(--lift, 0px));
-          transition: transform .15s ease-out;
-          transform-style: preserve-3d;
-        }
-        .cw-pop { animation: cw-pop .45s cubic-bezier(.2,.7,.2,1) both; }
-        .cw-grid-bg {
-          background-image:
-            linear-gradient(rgba(245,245,243,.045) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(245,245,243,.045) 1px, transparent 1px);
-          background-size: 56px 56px;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .cw-marquee-track { animation: none; }
-          [data-reveal] { opacity: 1; transform: none; transition: none; }
-          .cw-tilt { transform: none !important; }
-        }
-      `}</style>
+    <Link href="/" className={`flex items-center gap-2 font-display font-extrabold text-lg ${light ? 'text-white' : 'text-ink'}`}>
+      <span className="w-[34px] h-[34px] border-2.5 border-ink rounded-[9px] bg-brand text-white grid place-items-center text-lg shadow-hard-sm">
+        ⚔️
+      </span>
+      Code Review Wars
+    </Link>
+  )
+}
 
-      {/* ── Nav ─────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0a]/85 backdrop-blur px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#ccff00] flex items-center justify-center text-black font-black text-sm -skew-x-6">
-            CR
-          </div>
-          <span className="text-base font-black tracking-tight uppercase italic">
-            Code Review <span className="text-[#ccff00]">Wars</span>
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="font-display font-bold text-sm text-brand uppercase tracking-[0.08em]">{children}</div>
+  )
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="font-display font-extrabold leading-[1.04] text-[clamp(30px,4.6vw,46px)] mt-3">
+      {children}
+    </h2>
+  )
+}
+
+function HeroMock() {
+  return (
+    <div className="relative">
+      {/* doodle arrow + handwritten label */}
+      <svg
+        className="absolute pointer-events-none -top-[46px] -left-[30px] w-[120px] h-[90px] max-lg:hidden"
+        viewBox="0 0 120 90"
+        fill="none"
+      >
+        <path d="M8 14 C50 2 96 18 92 64" stroke="#ff6a3d" strokeWidth="3.5" strokeLinecap="round" />
+        <path d="M78 54 L94 66 L101 48" stroke="#ff6a3d" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span className="absolute -top-[58px] left-[78px] font-display font-bold text-coral text-[15px] -rotate-6 max-lg:hidden">
+        real bugs, graded live!
+      </span>
+
+      <div className="bg-paper border-2.5 border-ink rounded-pop-lg shadow-hard-lg overflow-hidden rotate-2">
+        {/* window chrome */}
+        <div className="flex items-center gap-2 px-[15px] py-[11px] border-b-2.5 border-ink bg-cream-2">
+          <span className="w-3 h-3 rounded-full border-2 border-ink bg-coral" />
+          <span className="w-3 h-3 rounded-full border-2 border-ink bg-hi" />
+          <span className="w-3 h-3 rounded-full border-2 border-ink bg-brand" />
+          <span className="font-mono text-xs text-ink-2 ml-1.5">checkout.ts</span>
+          <span className="ml-auto inline-flex items-center gap-1.5 font-display font-extrabold text-xs px-3 py-1 rounded-full bg-brand-soft">
+            Grade A
           </span>
         </div>
-        <div className="flex items-center gap-5">
-          <Link href="/pricing" className="text-sm text-neutral-400 hover:text-white transition-colors">
-            Pricing
-          </Link>
-          <Link href="/login" className="text-sm text-neutral-400 hover:text-white transition-colors">
-            Sign in
-          </Link>
-          <Link
-            href="/signup"
-            className="text-sm bg-[#ccff00] hover:bg-[#b9eb00] text-black px-5 py-2.5 font-black uppercase italic tracking-tight -skew-x-6 transition-all hover:-translate-y-0.5"
-          >
-            <span className="inline-block skew-x-6">Start free</span>
-          </Link>
+        {/* code */}
+        <div className="font-mono text-[12.5px] leading-[1.9] py-1.5">
+          <div className="flex px-3.5">
+            <span className="w-[26px] text-ink-3 flex-none">3</span>
+            <span><span className="text-accent-purple font-bold">const</span> cart = <span className="text-accent-purple font-bold">await</span> db.query(</span>
+          </div>
+          <div className="flex px-3.5 bg-coral-soft">
+            <span className="w-[26px] text-ink-3 flex-none">4</span>
+            <span>&nbsp;&nbsp;<span className="text-brand-dark">{'`SELECT * FROM carts WHERE id=${id}`'}</span>)</span>
+          </div>
+          <div className="flex px-3.5">
+            <span className="w-[26px] text-ink-3 flex-none">6</span>
+            <span><span className="text-accent-purple font-bold">for</span> (<span className="text-accent-purple font-bold">const</span> i <span className="text-accent-purple font-bold">of</span> cart.items) {'{'}</span>
+          </div>
+          <div className="flex px-3.5 bg-hi-soft">
+            <span className="w-[26px] text-ink-3 flex-none">7</span>
+            <span>&nbsp;&nbsp;<span className="text-accent-purple font-bold">await</span> db.getProduct(i.id) <span className="text-ink-3 italic">{'// N+1'}</span></span>
+          </div>
+          <div className="flex px-3.5">
+            <span className="w-[26px] text-ink-3 flex-none">9</span>
+            <span>db.orders.insert({'{'} status:<span className="text-brand-dark">&apos;paid&apos;</span> {'}'})</span>
+          </div>
+        </div>
+        {/* inline note */}
+        <div className="mx-3.5 mt-1 border-l-4 border-coral bg-coral-soft rounded-r-lg px-3 py-2 text-[12.5px] font-medium">
+          🛡️ <b>Line 4:</b> SQL injection — <code className="font-mono">id</code> is interpolated straight into the query.
+        </div>
+        {/* footer */}
+        <div className="flex items-center justify-between gap-2.5 px-[15px] py-[13px] border-t-2.5 border-ink mt-3 bg-brand-soft">
+          <span className="font-display font-extrabold text-sm">✅ 5 of 6 issues caught</span>
+          <span className="font-mono font-bold text-[13px]">+85 honor</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function LandingPage() {
+  return (
+    <div className="bg-cream text-ink">
+      {/* ── Top banner ── */}
+      <div className="bg-ink text-white text-center text-[13.5px] font-semibold py-[9px] px-4 font-display">
+        🎉 Launch week — <b className="text-hi">50% OFF</b> every credit pack. Ends in <Countdown />
+      </div>
+
+      {/* ── Sticky nav ── */}
+      <nav className="sticky top-0 z-50 bg-cream border-b-2.5 border-ink">
+        <div className={`${WRAP} flex items-center gap-4 h-16`}>
+          <Logo />
+          <div className="flex gap-1 ml-2.5 max-[900px]:hidden">
+            {[
+              ['#how', 'How it works'],
+              ['#features', 'Features'],
+              ['#love', 'Reviews'],
+              ['#pricing', 'Pricing'],
+              ['#faq', 'FAQ'],
+            ].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="font-semibold text-[14.5px] text-ink-2 px-3 py-2 rounded-[9px] hover:text-ink hover:bg-cream-2 transition-colors"
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+          <div className="ml-auto flex items-center gap-2.5">
+            <Link href="/login" className="font-semibold text-[14.5px] text-ink-2 hover:text-ink transition-colors">
+              Sign in
+            </Link>
+            <Link href="/signup" className="btn-pop btn-pop-green btn-pop-sm">
+              Start free →
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* ── Hero ────────────────────────────────────────────── */}
-      <section className="relative cw-grid-bg">
-        {/* glow + watermark */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: `radial-gradient(700px 380px at 70% 0%, ${VOLT}14, transparent 70%), radial-gradient(520px 300px at 12% 32%, ${RED}1f, transparent 70%)` }}
-        />
-        <span className="pointer-events-none select-none absolute right-2 top-24 text-[11rem] leading-none font-black text-transparent opacity-[.06] hidden xl:block" style={{ WebkitTextStroke: `2px ${VOLT}` }}>
-          道場
-        </span>
-
-        <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-10">
-          <div className="flex items-center gap-3 mb-8" data-reveal>
-            <span className="h-px w-10 bg-[#ccff00]" />
-            <span className="text-xs font-bold uppercase tracking-[0.3em] text-[#ccff00]">
-              The code review dojo
-            </span>
-          </div>
-
-          <h1 className="font-black italic uppercase leading-[0.92] tracking-tighter text-6xl md:text-8xl mb-8" data-reveal>
-            Find the bugs.
-            <br />
-            <span className="text-[#ccff00]">Earn the rank.</span>
-          </h1>
-
-          <div className="flex flex-col md:flex-row md:items-end gap-8 md:gap-16" data-reveal style={{ transitionDelay: '.1s' }}>
-            <p className="text-lg text-neutral-400 max-w-md leading-relaxed">
-              AI-generated production code, seeded with real bugs. Annotate like it&apos;s a PR,
-              get graded by an AI sensei, and climb from{' '}
-              <span className="text-neutral-200 font-semibold">8 kyu</span> to{' '}
-              <span style={{ color: RED }} className="font-semibold">Review Sensei</span>.
+      {/* ── Hero ── */}
+      <header className="pt-16 pb-[70px]">
+        <div className={`${WRAP} grid grid-cols-[1.05fr_0.95fr] max-[900px]:grid-cols-1 gap-12 items-center`}>
+          <div>
+            <div className="tag-pop mb-[22px]">🏆 #1 way to prep for the code review round</div>
+            <h1 className="font-display font-extrabold leading-[1.04] text-[clamp(38px,5.3vw,62px)]">
+              Become the dev who catches the bug <span className="mark-hi">everyone else merged.</span>
+            </h1>
+            <p className="text-xl text-ink-2 leading-[1.6] mt-[22px] max-w-[520px]">
+              Code Review Wars throws <b>real, messy production code</b> at you — with nasty bugs hidden
+              inside — then grades your review like a staff engineer. Get sharp. Get hired.
             </p>
-            <div className="flex items-center gap-4 shrink-0">
-              <Link
-                href="/signup"
-                className="bg-[#ccff00] hover:bg-[#b9eb00] text-black px-8 py-4 font-black uppercase italic tracking-tight -skew-x-6 transition-all hover:-translate-y-1 hover:shadow-[0_10px_40px_-8px_#ccff00aa]"
-              >
-                <span className="inline-block skew-x-6">Start training →</span>
+            <div className="flex items-center gap-4 mt-[30px] flex-wrap">
+              <Link href="/signup" className="btn-pop btn-pop-green btn-pop-lg">
+                ⚡ Start catching bugs — free
               </Link>
-              <span className="text-xs text-neutral-500 leading-tight">
-                5 free credits.
-                <br />
-                No card required.
-              </span>
+              <a href="#how" className="btn-pop btn-pop-lg">
+                See how it works
+              </a>
             </div>
-          </div>
-        </div>
-
-        {/* ── 3D-tilt interactive demo ── */}
-        <div className="relative max-w-5xl mx-auto px-6 pb-24" style={{ perspective: '1400px' }}>
-          {/* floating shapes */}
-          <span className="pointer-events-none absolute -left-2 top-10 w-5 h-5 bg-[#ccff00] hidden lg:block" style={{ animation: 'cw-float 5s ease-in-out infinite' }} />
-          <span className="pointer-events-none absolute -right-3 bottom-24 w-8 h-8 border-2 hidden lg:block" style={{ borderColor: RED, animation: 'cw-float2 6s ease-in-out infinite' }} />
-
-          <div
-            ref={tiltRef}
-            onPointerMove={handlePointerMove}
-            onPointerLeave={handlePointerLeave}
-            className="cw-tilt"
-          >
-            <div className="p-[1px] rounded-2xl" style={{ background: `linear-gradient(135deg, ${VOLT}66, transparent 35%, transparent 65%, ${RED}66)` }}>
-              <div className="rounded-2xl bg-[#101010] shadow-[0_40px_120px_-30px_rgba(0,0,0,.9)] overflow-hidden">
-                {/* window chrome */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-[#161616]">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                    <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
-                    <span className="w-3 h-3 rounded-full bg-[#28c840]" />
-                    <span className="ml-3 text-xs text-neutral-500 font-mono">coupon-service.ts · review in progress</span>
-                  </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 hidden sm:block">
-                    {promoted ? <span className="text-[#ccff00]">all bugs found</span> : `${found.length}/3 bugs found — click the code`}
+            <p className="text-[13.5px] text-ink-2 font-medium mt-3.5">
+              ✅ 5 free reviews &nbsp;•&nbsp; no credit card &nbsp;•&nbsp; one-time pricing, no subscription
+            </p>
+            <div className="flex items-center gap-3.5 mt-[26px] flex-wrap">
+              <div className="flex">
+                {[
+                  ['JK', 'bg-hi'],
+                  ['AM', 'bg-coral text-white'],
+                  ['SR', 'bg-accent-blue text-white'],
+                  ['PL', 'bg-brand text-white'],
+                  ['DV', 'bg-[#a78bfa] text-white'],
+                ].map(([initials, fill], i) => (
+                  <span key={initials} className={`av-pop ${fill} ${i > 0 ? '-ml-3' : ''}`}>
+                    {initials}
                   </span>
-                </div>
-
-                <div className="grid md:grid-cols-[1fr_240px]">
-                  {/* code panel */}
-                  <div className="font-mono text-[13px] leading-7 p-5 overflow-x-auto">
-                    {/* line 1 */}
-                    <div className="flex gap-4"><span className="text-neutral-700 select-none w-4 text-right">1</span><span><span className="text-[#ff7b72]">async function</span> <span className="text-[#d2a8ff]">applyCoupon</span><span className="text-neutral-300">(code: </span><span className="text-[#79c0ff]">string</span><span className="text-neutral-300">) {'{'}</span></span></div>
-                    {/* line 2 */}
-                    <div className="flex gap-4"><span className="text-neutral-700 select-none w-4 text-right">2</span><span className="text-neutral-300">  <span className="text-[#ff7b72]">const</span> result = <span className="text-[#ff7b72]">await</span> db.<span className="text-[#d2a8ff]">query</span>(</span></div>
-                    {/* line 3 — bug */}
-                    <button
-                      type="button"
-                      onClick={() => toggleBug(3)}
-                      className={`flex gap-4 w-full text-left transition-colors ${found.includes(3) ? 'bg-[#ccff00]/10' : 'hover:bg-white/5 cursor-pointer'}`}
-                      data-demo-bug="3"
-                    >
-                      <span className="text-neutral-700 select-none w-4 text-right">3</span>
-                      <span className={`text-[#a5d6ff] ${found.includes(3) ? '' : 'underline decoration-dotted decoration-2 underline-offset-4'}`} style={{ textDecorationColor: found.includes(3) ? undefined : `${RED}99` }}>
-                        {'    '}{sqlLine}
-                      </span>
-                    </button>
-                    {found.includes(3) && (
-                      <div className="cw-pop my-1 ml-8 mr-3 border-l-2 pl-3 py-1.5 text-xs font-sans text-neutral-300 bg-[#ccff00]/5" style={{ borderColor: VOLT }}>
-                        <span className="font-bold text-[#ccff00]">+{HONOR_PER_BUG} honor · </span>{DEMO_BUGS[3]}
-                      </div>
-                    )}
-                    {/* line 4 */}
-                    <div className="flex gap-4"><span className="text-neutral-700 select-none w-4 text-right">4</span><span className="text-neutral-300">  )</span></div>
-                    {/* line 5 — bug */}
-                    <button
-                      type="button"
-                      onClick={() => toggleBug(5)}
-                      className={`flex gap-4 w-full text-left transition-colors ${found.includes(5) ? 'bg-[#ccff00]/10' : 'hover:bg-white/5 cursor-pointer'}`}
-                      data-demo-bug="5"
-                    >
-                      <span className="text-neutral-700 select-none w-4 text-right">5</span>
-                      <span className={`text-neutral-300 ${found.includes(5) ? '' : 'underline decoration-dotted decoration-2 underline-offset-4'}`} style={{ textDecorationColor: found.includes(5) ? undefined : `${RED}99` }}>
-                        {'  '}<span className="text-[#ff7b72]">return</span> result.rows[<span className="text-[#79c0ff]">0</span>].discount
-                      </span>
-                    </button>
-                    {found.includes(5) && (
-                      <div className="cw-pop my-1 ml-8 mr-3 border-l-2 pl-3 py-1.5 text-xs font-sans text-neutral-300 bg-[#ccff00]/5" style={{ borderColor: VOLT }}>
-                        <span className="font-bold text-[#ccff00]">+{HONOR_PER_BUG} honor · </span>{DEMO_BUGS[5]}
-                      </div>
-                    )}
-                    {/* line 6 */}
-                    <div className="flex gap-4"><span className="text-neutral-700 select-none w-4 text-right">6</span><span className="text-neutral-300">{'}'}</span></div>
-                    {/* line 7 — bug */}
-                    <button
-                      type="button"
-                      onClick={() => toggleBug(7)}
-                      className={`flex gap-4 w-full text-left transition-colors ${found.includes(7) ? 'bg-[#ccff00]/10' : 'hover:bg-white/5 cursor-pointer'}`}
-                      data-demo-bug="7"
-                    >
-                      <span className="text-neutral-700 select-none w-4 text-right">7</span>
-                      <span className={`${found.includes(7) ? '' : 'underline decoration-dotted decoration-2 underline-offset-4'}`} style={{ textDecorationColor: found.includes(7) ? undefined : `${RED}99` }}>
-                        <span className="text-[#ff7b72]">const</span> <span className="text-neutral-300">SECRET = process.env.JWT_SECRET ?? </span><span className="text-[#a5d6ff]">&apos;dev123&apos;</span>
-                      </span>
-                    </button>
-                    {found.includes(7) && (
-                      <div className="cw-pop my-1 ml-8 mr-3 border-l-2 pl-3 py-1.5 text-xs font-sans text-neutral-300 bg-[#ccff00]/5" style={{ borderColor: VOLT }}>
-                        <span className="font-bold text-[#ccff00]">+{HONOR_PER_BUG} honor · </span>{DEMO_BUGS[7]}
-                      </div>
-                    )}
-                    <div className="flex gap-4"><span className="text-neutral-700 select-none w-4 text-right">8</span><span className="text-neutral-500"><span style={{ animation: 'cw-blink 1.1s step-end infinite' }}>▍</span></span></div>
-                  </div>
-
-                  {/* score panel */}
-                  <div className="border-t md:border-t-0 md:border-l border-white/10 bg-[#0d0d0d] p-5 flex flex-col gap-4">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500">Your rank</p>
-                    <div className={promoted ? 'cw-pop' : ''}>
-                      <RankBadge rank={promoted ? RANKS[1] : RANKS[0]} size="lg" />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1.5">
-                        <span className="text-neutral-500">honor</span>
-                        <span className="font-bold text-[#ccff00]">{honor}</span>
-                      </div>
-                      <div className="h-1.5 bg-white/10 overflow-hidden">
-                        <div className="h-full transition-all duration-700" style={{ width: `${Math.min(100, honor)}%`, background: VOLT }} />
-                      </div>
-                      <p className="text-[11px] text-neutral-600 mt-1.5">
-                        {promoted ? 'Promoted — 7 kyu unlocked' : `${100 - honor} honor to 7 kyu`}
-                      </p>
-                    </div>
-                    {promoted ? (
-                      <Link href="/signup" className="cw-pop mt-auto text-center text-xs font-black uppercase italic bg-[#ccff00] text-black px-3 py-2.5 -skew-x-6 hover:bg-[#b9eb00] transition-colors">
-                        <span className="inline-block skew-x-6">Keep climbing →</span>
-                      </Link>
-                    ) : (
-                      <p className="mt-auto text-[11px] text-neutral-600 leading-relaxed">
-                        This is the real game: 3 bugs are hiding in the code.{' '}
-                        <span className="text-neutral-400">Click the suspicious lines.</span>
-                      </p>
-                    )}
-                  </div>
+                ))}
+              </div>
+              <div>
+                <div className="text-[#f59e0b] tracking-wider">★★★★★</div>
+                <div className="text-[13.5px] font-semibold text-ink-2">
+                  Loved by engineers prepping for <b className="text-ink">FAANG</b>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ── Marquee ─────────────────────────────────────────── */}
-      <div className="bg-[#ccff00] py-3 -rotate-1 scale-105 overflow-hidden">
-        <div className="cw-marquee-track flex whitespace-nowrap">
-          {[...Array(2)].map((_, dup) => (
-            <div key={dup} className="flex shrink-0" aria-hidden={dup === 1}>
-              {[...Array(3)].map((_, rep) => (
-                <span key={rep} className="flex">
-                  {MARQUEE_ITEMS.map((item) => (
-                    <span key={item} className="text-black font-black italic uppercase tracking-tight text-xl px-6 flex items-center gap-6">
-                      {item} <span className="w-2.5 h-2.5 bg-black rotate-45 inline-block" />
-                    </span>
-                  ))}
-                </span>
-              ))}
-            </div>
-          ))}
+          <HeroMock />
+        </div>
+      </header>
+
+      {/* ── Proof bar ── */}
+      <div className="bg-cream-2 border-y-2.5 border-ink py-6">
+        <div className={`${WRAP} flex items-center justify-center gap-[38px] flex-wrap font-display font-bold text-[15px] text-ink-2`}>
+          <div><span className="text-[26px] text-ink">2 languages</span> · 7 domains</div>
+          <div>•</div>
+          <div><span className="text-[26px] text-ink">4–6</span> bugs per challenge</div>
+          <div>•</div>
+          <div><span className="text-[26px] text-ink">9 ranks</span> to climb</div>
+          <div>•</div>
+          <div><span className="text-[26px] text-ink">5 free</span> sessions to start</div>
         </div>
       </div>
 
-      {/* ── How it works ────────────────────────────────────── */}
-      <section className="max-w-6xl mx-auto px-6 py-28">
-        <div className="flex items-center gap-3 mb-14" data-reveal>
-          <span className="h-px w-10" style={{ background: RED }} />
-          <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: RED }}>
-            The training loop
-          </span>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { n: '01', title: 'Generate', body: 'Pick a language and scenario. The AI writes 60–120 lines of production-style code with 4–6 bugs planted inside — security holes, race conditions, N+1 queries.' },
-            { n: '02', title: 'Annotate', body: 'Click any line and call out the issue, exactly like a real PR review. Severity, impact, the fix — the sharper your annotation, the higher your score.' },
-            { n: '03', title: 'Rank up', body: 'An AI sensei grades you A–F against every hidden issue. Each point of score becomes honor. Honor climbs the ladder: 8 kyu to Review Sensei.' },
-          ].map((step, i) => (
-            <div
-              key={step.n}
-              data-reveal
-              style={{ transitionDelay: `${i * 0.12}s` }}
-              className="group border border-white/10 bg-[#101010] p-7 hover:border-[#ccff00]/60 hover:-translate-y-1.5 transition-all duration-300"
-            >
-              <span className="block text-5xl font-black italic text-transparent mb-6 group-hover:text-[#ccff00] transition-colors duration-300" style={{ WebkitTextStroke: '1.5px #3a3a3a' }}>
-                {step.n}
-              </span>
-              <h3 className="text-xl font-black uppercase italic tracking-tight mb-3">{step.title}</h3>
-              <p className="text-sm text-neutral-400 leading-relaxed">{step.body}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* stat band */}
-        <div className="mt-20 grid grid-cols-2 md:grid-cols-4 border border-white/10 divide-x divide-white/10" data-reveal>
-          {[
-            { k: '6', v: 'issue categories' },
-            { k: '2', v: 'languages' },
-            { k: '9', v: 'ranks to climb' },
-            { k: '∞', v: 'generated snippets' },
-          ].map((s) => (
-            <div key={s.v} className="p-6 text-center max-md:border-b max-md:border-white/10">
-              <p className="text-4xl font-black italic text-[#ccff00]">{s.k}</p>
-              <p className="text-[11px] uppercase tracking-widest text-neutral-500 mt-2">{s.v}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Rank ladder ─────────────────────────────────────── */}
-      <section className="relative border-y border-white/10 bg-[#0d0d0d] cw-grid-bg">
-        <div className="max-w-6xl mx-auto px-6 py-24">
-          <div className="text-center mb-14" data-reveal>
-            <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter mb-4">
-              Climb the <span className="text-[#ccff00]">ranks</span>
-            </h2>
-            <p className="text-neutral-400 max-w-xl mx-auto">
-              Every review earns honor. Mastery comes one kata at a time — from white belt
-              to the red badge of a <span style={{ color: RED }} className="font-semibold">Review Sensei</span>.
-            </p>
-          </div>
-          <div className="relative" data-reveal>
-            <span className="absolute left-0 right-0 top-1/2 h-px hidden lg:block" style={{ background: `linear-gradient(90deg, ${VOLT}55, ${RED}55)` }} />
-            <div className="relative flex items-center justify-center gap-3 md:gap-4 flex-wrap">
-              {RANKS.map((rank) => (
-                <div key={rank.label} className="group flex flex-col items-center gap-2 bg-[#0d0d0d] px-1.5 py-2 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-110">
-                  <RankBadge rank={rank} size="md" />
-                  <span className="text-[10px] text-neutral-600 group-hover:text-neutral-300 transition-colors whitespace-nowrap">
-                    {rank.title}
-                  </span>
+      {/* ── Pain ── */}
+      <section className="bg-paper border-t-2.5 border-ink py-[84px]">
+        <div className={`${WRAP} text-center`}>
+          <Eyebrow>sound familiar?</Eyebrow>
+          <SectionHeading>
+            The review round is where good devs <span className="u-wave">freeze.</span>
+          </SectionHeading>
+          <div className="grid grid-cols-3 max-[900px]:grid-cols-1 gap-[18px] mt-[42px] text-left">
+            {PAIN_CARDS.map((c) => (
+              <div key={c.title} className="p-6 bg-cream border-2.5 border-ink rounded-pop-lg shadow-hard">
+                <div className="w-[38px] h-[38px] rounded-[10px] border-2.5 border-ink bg-coral-soft grid place-items-center text-xl mb-3.5">
+                  {c.emoji}
                 </div>
-              ))}
-            </div>
+                <h3 className="font-display font-extrabold text-lg mb-2">{c.title}</h3>
+                <p className="text-ink-2 text-[14.5px]">{c.body}</p>
+              </div>
+            ))}
           </div>
+          <p className="font-display font-bold text-[22px] mt-10">There&apos;s a better way to train 👇</p>
         </div>
       </section>
 
-      {/* ── Reverse marquee ─────────────────────────────────── */}
-      <div className="py-3 rotate-1 scale-105 overflow-hidden" style={{ background: RED }}>
-        <div className="cw-marquee-track rev flex whitespace-nowrap">
-          {[...Array(2)].map((_, dup) => (
-            <div key={dup} className="flex shrink-0" aria-hidden={dup === 1}>
-              {[...Array(3)].map((_, rep) => (
-                <span key={rep} className="flex">
-                  {['SECURITY', 'PERFORMANCE', 'LOGIC', 'ERROR HANDLING', 'RACE CONDITIONS', 'N+1 QUERIES'].map((item) => (
-                    <span key={item} className="text-white font-black italic uppercase tracking-tight text-xl px-6 flex items-center gap-6">
-                      {item} <span className="w-2.5 h-2.5 bg-white rotate-45 inline-block" />
-                    </span>
-                  ))}
+      {/* ── How it works ── */}
+      <section id="how" className="py-[84px]">
+        <div className={`${WRAP} text-center`}>
+          <Eyebrow>how it works</Eyebrow>
+          <SectionHeading>
+            Three steps. <span className="mark-hi mark-green">Real reps.</span>
+          </SectionHeading>
+          <p className="text-lg text-ink-2 leading-[1.6] max-w-[560px] mx-auto mt-4">
+            No toy puzzles. Every session is fresh, production-style code from a domain you pick.
+          </p>
+          <div className="grid grid-cols-3 max-[900px]:grid-cols-1 gap-[22px] mt-[50px] text-left">
+            {STEPS.map((s, i) => (
+              <div key={s.title} className="relative p-7 px-6 bg-paper border-2.5 border-ink rounded-pop-lg shadow-hard">
+                <span className="absolute -top-[18px] -left-3 w-[46px] h-[46px] rounded-full border-2.5 border-ink bg-hi grid place-items-center font-display font-extrabold text-xl shadow-hard-sm">
+                  {i + 1}
                 </span>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Final CTA ───────────────────────────────────────── */}
-      <section className="bg-[#ccff00] text-black px-6 py-28 text-center relative overflow-hidden">
-        <span className="pointer-events-none select-none absolute -bottom-10 left-1/2 -translate-x-1/2 text-[16rem] leading-none font-black opacity-[.05] whitespace-nowrap">
-          型 KATA 型
-        </span>
-        <div className="relative">
-          <h2 className="text-5xl md:text-7xl font-black uppercase italic tracking-tighter leading-[0.95] mb-8" data-reveal>
-            Ready to
-            <br />
-            review?
-          </h2>
-          <div data-reveal style={{ transitionDelay: '.1s' }}>
-            <Link
-              href="/signup"
-              className="inline-block bg-black text-[#ccff00] px-10 py-5 font-black uppercase italic tracking-tight -skew-x-6 transition-all hover:-translate-y-1 hover:shadow-[0_16px_50px_-12px_rgba(0,0,0,.7)]"
-            >
-              <span className="inline-block skew-x-6">Start free — 5 credits →</span>
-            </Link>
-            <p className="mt-5 text-sm font-semibold text-black/60">No credit card. Rank 8 kyu is waiting.</p>
+                <span className="text-[38px] block mb-3.5">{s.emoji}</span>
+                <h3 className="font-display font-extrabold text-[21px] mb-2">{s.title}</h3>
+                <p className="text-ink-2 text-[14.5px]">{s.body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────── */}
-      <footer className="border-t border-white/10 px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4 max-w-6xl mx-auto">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#ccff00] flex items-center justify-center text-black font-black text-xs -skew-x-6">
-            CR
+      {/* ── Features ── */}
+      <section id="features" className="bg-cream-2 border-y-2.5 border-ink py-[84px]">
+        <div className={`${WRAP} text-center`}>
+          <Eyebrow>why it works</Eyebrow>
+          <SectionHeading>
+            Built to make you <span className="mark-hi mark-coral">dangerous</span> in review
+          </SectionHeading>
+          <div className="grid grid-cols-3 max-[900px]:grid-cols-1 gap-[18px] mt-12 text-left">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="p-6 bg-paper border-2.5 border-ink rounded-pop-lg shadow-hard">
+                <div className={`w-[52px] h-[52px] rounded-[13px] border-2.5 border-ink grid place-items-center text-[26px] mb-4 shadow-hard-sm ${f.tile}`}>
+                  {f.emoji}
+                </div>
+                <h4 className="font-display font-extrabold text-lg mb-2">{f.title}</h4>
+                <p className="text-ink-2 text-sm">{f.body}</p>
+              </div>
+            ))}
           </div>
-          <span className="text-sm font-bold text-neutral-400">Code Review Wars</span>
         </div>
-        <div className="flex items-center gap-6 text-xs text-neutral-600">
-          <Link href="/pricing" className="hover:text-neutral-300 transition-colors">Pricing</Link>
-          <Link href="/login" className="hover:text-neutral-300 transition-colors">Sign in</Link>
-          <Link href="/signup" className="hover:text-neutral-300 transition-colors">Start free</Link>
+      </section>
+
+      {/* ── Testimonials ── */}
+      <section id="love" className="py-[84px]">
+        <div className={`${WRAP} text-center`}>
+          <Eyebrow>don&apos;t take our word for it</Eyebrow>
+          <SectionHeading>
+            Engineers are <span className="mark-hi">shipping their offers</span>
+          </SectionHeading>
+          <div className="columns-3 max-[900px]:columns-1 gap-[18px] mt-12 text-left">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="break-inside-avoid mb-[18px] p-[22px] bg-paper border-2.5 border-ink rounded-pop-lg shadow-hard">
+                <span className="block text-[#f59e0b] tracking-wider mb-[11px]">★★★★★</span>
+                <p className="text-[14.5px] leading-[1.6] mb-4">{t.quote}</p>
+                <div className="flex items-center gap-[11px]">
+                  <span className={`av-pop ${t.fill}`}>{t.initials}</span>
+                  <div>
+                    <div className="font-display font-bold text-sm">{t.name}</div>
+                    <div className="text-[12.5px] text-ink-3">{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Pricing ── */}
+      <section id="pricing" className="bg-cream-2 border-y-2.5 border-ink py-[84px]">
+        <div className={`${WRAP} text-center`}>
+          <Eyebrow>pricing</Eyebrow>
+          <SectionHeading>
+            Pay once. <span className="mark-hi mark-green">Train forever.</span>
+          </SectionHeading>
+          <p className="text-lg text-ink-2 leading-[1.6] max-w-[540px] mx-auto mt-4">
+            1 credit = 1 full session: code generation + AI grading. No subscription. Credits never expire.
+          </p>
+          <div className="grid grid-cols-3 max-[900px]:grid-cols-1 gap-5 mt-12 text-left items-start">
+            {PACKS.map((p) => (
+              <div
+                key={p.name}
+                className={`relative p-7 bg-paper border-2.5 rounded-pop-lg ${
+                  p.popular ? 'border-brand shadow-hard-lg -translate-y-1.5' : 'border-ink shadow-hard'
+                }`}
+              >
+                {p.popular && (
+                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand text-white font-display font-extrabold text-xs px-4 py-1.5 border-2.5 border-ink rounded-full shadow-hard-sm whitespace-nowrap">
+                    🔥 MOST POPULAR
+                  </span>
+                )}
+                <h3 className="font-display font-extrabold text-[22px]">{p.name}</h3>
+                <div className="flex items-baseline gap-2 mt-3.5 mb-1">
+                  <span className="font-display font-extrabold text-[46px]">{p.now}</span>
+                  <span className="text-xl text-ink-3 line-through font-bold">{p.was}</span>
+                </div>
+                <div className="font-bold text-brand text-[15px]">{p.credits}</div>
+                <ul className="my-5 flex flex-col gap-[11px]">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex gap-2.5 items-start text-[14.5px]">
+                      <span className="text-brand font-extrabold flex-none">✓</span> {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/signup" className={`btn-pop w-full ${p.popular ? 'btn-pop-green' : ''}`}>
+                  {p.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+          <div className="inline-flex items-center gap-2 mt-[30px] font-semibold text-[14.5px] px-[18px] py-[11px] border-2.5 border-ink rounded-full bg-brand-soft shadow-hard-sm">
+            ✅ Start with 5 free sessions — no card required.
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section id="faq" className="py-[84px]">
+        <div className={`${WRAP} text-center`}>
+          <Eyebrow>questions?</Eyebrow>
+          <SectionHeading>Frequently asked</SectionHeading>
+          <div className="max-w-[760px] mx-auto mt-[42px] flex flex-col gap-3.5 text-left">
+            {FAQS.map((f) => (
+              <details
+                key={f.q}
+                open={f.open}
+                className="group bg-paper border-2.5 border-ink rounded-pop shadow-hard-sm overflow-hidden"
+              >
+                <summary className="list-none cursor-pointer px-[22px] py-[18px] font-display font-bold text-[17px] flex items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                  {f.q}
+                  <span className="text-2xl flex-none transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <div className="px-[22px] pb-5 text-ink-2 text-[15px] leading-[1.6]">{f.a}</div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Founder note ── */}
+      <section className="bg-paper border-t-2.5 border-ink py-[84px]">
+        <div className={WRAP}>
+          <div className="max-w-[780px] mx-auto p-9 bg-cream border-2.5 border-ink rounded-pop-xl shadow-hard-lg">
+            <div className="flex items-center gap-3.5 mb-2">
+              <span className="av-pop !w-[54px] !h-[54px] !text-lg bg-brand text-white">CW</span>
+              <div>
+                <div className="font-display font-extrabold text-lg">A note from the founder 👋</div>
+                <div className="text-[13px] text-ink-3">Built solo, shipped fast</div>
+              </div>
+            </div>
+            <p className="text-base text-ink-2 leading-[1.7] mt-2">
+              Hey — I built Code Review Wars after watching brilliant engineers (myself included) freeze
+              the second an interviewer shared a pull request. We grind algorithms for months and spend{' '}
+              <i>zero</i> time on the one thing we do every single day at work: reading and reviewing other
+              people&apos;s code.
+            </p>
+            <p className="text-base text-ink-2 leading-[1.7] mt-3.5">
+              So I made the tool I wish I&apos;d had — real code, real bugs, instant feedback. No fluff, no
+              subscription. Just reps until catching the bug becomes reflex.
+            </p>
+            <div className="font-display font-extrabold text-[22px] mt-3.5">— the maker of Code Review Wars</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA ── */}
+      <section className="bg-brand border-t-2.5 border-ink text-white text-center py-[84px]">
+        <div className={WRAP}>
+          <h2 className="font-display font-extrabold leading-[1.04] text-[clamp(32px,5vw,52px)]">
+            Your next interview has a<br />code review round.
+          </h2>
+          <p className="text-[19px] text-[#eafff0] leading-[1.6] max-w-[520px] mx-auto mt-[18px]">
+            Walk in having reviewed a hundred bugs. Start free — five reviews on the house, no card.
+          </p>
+          <div className="mt-8 flex gap-3.5 justify-center flex-wrap">
+            <Link href="/signup" className="btn-pop btn-pop-yellow btn-pop-lg">
+              ⚡ Start catching bugs — free
+            </Link>
+          </div>
+          <p className="mt-4 text-[#eafff0] font-semibold text-sm">
+            ★★★★★ &nbsp;Join the engineers getting dangerous in review
+          </p>
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="bg-ink text-[#d6d3d1] py-12 pb-9">
+        <div className={`${WRAP} flex items-center justify-between gap-5 flex-wrap`}>
+          <Logo light />
+          <div className="flex gap-[22px] text-sm">
+            <a href="#how" className="hover:text-white transition-colors">How it works</a>
+            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
+            <Link href="/login" className="hover:text-white transition-colors">Sign in</Link>
+          </div>
+          <div className="text-[13px] text-[#a8a29e]">© 2026 · Built for devs who catch things.</div>
         </div>
       </footer>
     </div>

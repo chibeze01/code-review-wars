@@ -1,12 +1,13 @@
 import { StateField, StateEffect, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 
+// Light "indie" palette — soft tinted backgrounds, dark readable text
 export const COMMENT_COLORS = [
-  { bg: 'rgba(139, 92, 246, 0.22)', border: '#7c3aed', tag: 'violet',  text: '#c4b5fd' },
-  { bg: 'rgba(16,  185, 129, 0.22)', border: '#059669', tag: 'emerald', text: '#6ee7b7' },
-  { bg: 'rgba(245, 158, 11,  0.22)', border: '#d97706', tag: 'amber',   text: '#fcd34d' },
-  { bg: 'rgba(59,  130, 246, 0.22)', border: '#2563eb', tag: 'blue',    text: '#93c5fd' },
-  { bg: 'rgba(244, 63,  94,  0.22)', border: '#e11d48', tag: 'rose',    text: '#fda4af' },
+  { bg: 'rgba(124, 58, 237, 0.08)', border: '#7c3aed', tag: 'violet',  text: '#5b21b6' },
+  { bg: 'rgba(22, 163, 74,  0.08)', border: '#16a34a', tag: 'emerald', text: '#0f7a37' },
+  { bg: 'rgba(202, 138, 4,  0.10)', border: '#ca8a04', tag: 'amber',   text: '#854d0e' },
+  { bg: 'rgba(59, 130, 246, 0.08)', border: '#3b82f6', tag: 'blue',    text: '#1e40af' },
+  { bg: 'rgba(255, 106, 61, 0.10)', border: '#ff6a3d', tag: 'coral',   text: '#c2410c' },
 ] as const
 
 export interface HighlightRange {

@@ -28,58 +28,54 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-cream text-ink flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex">
-            <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-bold mx-auto mb-4">
-              CR
-            </div>
+            <span className="w-12 h-12 border-2.5 border-ink rounded-[12px] bg-brand text-white grid place-items-center text-2xl shadow-hard-sm mx-auto mb-4">
+              ⚔️
+            </span>
           </Link>
-          <h1 className="text-xl font-bold text-slate-100">Welcome back</h1>
-          <p className="text-sm text-slate-500 mt-1">Sign in to Code Review Wars</p>
+          <h1 className="font-display font-extrabold text-2xl">Welcome back</h1>
+          <p className="text-sm text-ink-2 mt-1">Sign in to Code Review Wars</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="card-pop p-6 flex flex-col gap-4">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">
-              {error}
+            <div className="bg-coral-soft border-2 border-ink rounded-pop px-4 py-3 text-sm font-medium">
+              ⚠️ {error}
             </div>
           )}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Email</label>
+            <label className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+              className="w-full bg-paper border-2.5 border-ink rounded-pop px-3 py-2.5 text-sm text-ink placeholder-ink-3 focus:outline-none focus:bg-cream-2/40 transition-colors"
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Password</label>
+            <label className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+              className="w-full bg-paper border-2.5 border-ink rounded-pop px-3 py-2.5 text-sm text-ink placeholder-ink-3 focus:outline-none focus:bg-cream-2/40 transition-colors"
             />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="py-3 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold text-sm transition-colors"
-          >
-            {loading ? 'Signing in…' : 'Sign in'}
+          <button type="submit" disabled={loading} className="btn-pop btn-pop-green w-full mt-1">
+            {loading ? 'Signing in…' : 'Sign in →'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
+        <p className="mt-6 text-center text-sm text-ink-2">
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-violet-400 hover:text-violet-300">
+          <Link href="/signup" className="font-bold text-brand hover:underline">
             Sign up free
           </Link>
         </p>

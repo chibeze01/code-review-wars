@@ -10,7 +10,8 @@ import { createPortal } from 'react-dom'
 import CodeMirror from '@uiw/react-codemirror'
 import { javascript } from '@codemirror/lang-javascript'
 import { java } from '@codemirror/lang-java'
-import { oneDark } from '@codemirror/theme-one-dark'
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { tags } from '@lezer/highlight'
 import { EditorView, lineNumbers } from '@codemirror/view'
 import type { EditorView as EditorViewType } from '@codemirror/view'
 import {
@@ -72,7 +73,7 @@ function InlineCommentCard({
         <span className="text-xs font-mono font-semibold shrink-0" style={{ color: col.text }}>
           {lineLabel}
         </span>
-        <span className="text-xs text-slate-500 truncate flex-1 italic">{comment.comment}</span>
+        <span className="text-xs text-ink-3 truncate flex-1 italic">{comment.comment}</span>
       </div>
     )
   }
@@ -104,7 +105,7 @@ function InlineCommentCard({
         {!readOnly && (
           <button
             onClick={onDelete}
-            className="text-slate-600 hover:text-red-400 text-xs px-1 transition-colors"
+            className="text-ink-3 hover:text-coral text-xs px-1 transition-colors"
           >
             ✕
           </button>
@@ -112,7 +113,7 @@ function InlineCommentCard({
       </div>
       {comment.selectedText.trim() && (
         <div className="mx-4 mb-2">
-          <code className="block text-xs text-slate-500 bg-black/25 rounded px-2.5 py-1.5 leading-relaxed font-mono line-clamp-3">
+          <code className="block text-xs text-ink-2 bg-ink/5 rounded px-2.5 py-1.5 leading-relaxed font-mono line-clamp-3">
             {comment.selectedText.trim().slice(0, 200)}
           </code>
         </div>
@@ -148,14 +149,14 @@ function InlineCommentForm({
   const lineLabel = startLine === endLine ? `Line ${startLine}` : `Lines ${startLine}–${endLine}`
 
   return (
-    <div className="bg-[#1c2128] border-y border-violet-500/30">
+    <div className="bg-cream border-y-2 border-brand/40">
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
-        <span className="text-xs font-semibold text-violet-400 font-mono">{lineLabel}</span>
-        <button onClick={onCancel} className="text-slate-600 hover:text-slate-300 text-xs transition-colors">✕</button>
+        <span className="text-xs font-bold text-brand font-mono">{lineLabel}</span>
+        <button onClick={onCancel} className="text-ink-3 hover:text-ink text-xs transition-colors">✕</button>
       </div>
       {selectedText.trim() && (
         <div className="mx-4 mb-2">
-          <code className="block text-xs text-slate-500 bg-black/30 rounded px-2.5 py-1.5 leading-relaxed font-mono line-clamp-2">
+          <code className="block text-xs text-ink-2 bg-ink/5 rounded px-2.5 py-1.5 leading-relaxed font-mono line-clamp-2">
             {selectedText.trim().slice(0, 160)}
           </code>
         </div>
@@ -174,19 +175,19 @@ function InlineCommentForm({
           }}
           placeholder="What's the issue here? (⌘+Enter to save)"
           rows={3}
-          className="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-violet-500 resize-none"
+          className="w-full bg-paper border-2 border-ink/20 rounded-lg px-3 py-2 text-sm text-ink placeholder-ink-3 focus:outline-none focus:border-brand resize-none"
         />
         <div className="flex gap-2">
           <button
             onClick={() => text.trim() && onSave(text.trim())}
             disabled={!text.trim()}
-            className="px-3 py-1.5 rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white text-xs font-semibold transition-colors"
+            className="px-3.5 py-1.5 rounded-lg border-2 border-ink bg-brand text-white text-xs font-display font-bold shadow-hard-sm disabled:opacity-40 hover:-translate-x-px hover:-translate-y-px active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all"
           >
             Save comment
           </button>
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 rounded bg-[#21262d] hover:bg-[#30363d] text-slate-400 text-xs font-semibold transition-colors"
+            className="px-3.5 py-1.5 rounded-lg border-2 border-ink/25 bg-paper text-ink-2 text-xs font-display font-bold hover:border-ink transition-colors"
           >
             Cancel
           </button>
@@ -196,23 +197,39 @@ function InlineCommentForm({
   )
 }
 
+// Light "paper window" theme — cream gutters, ink text, yellow-marker selection
 const editorTheme = EditorView.theme({
-  '&.cm-editor': { backgroundColor: 'transparent' },
+  '&.cm-editor': { backgroundColor: '#ffffff', color: '#1c1917' },
+  '.cm-content': { fontFamily: 'var(--font-mono), monospace', fontSize: '13px' },
   '.cm-gutters': {
-    backgroundColor: '#161b22',
-    borderRight: '1px solid #30363d',
-    color: '#484f58',
+    backgroundColor: '#fff2dc',
+    borderRight: '2px solid #1c1917',
+    color: '#8a827b',
     userSelect: 'none',
+    fontFamily: 'var(--font-mono), monospace',
   },
-  '.cm-gutter.cm-lineNumbers .cm-gutterElement:hover': { color: '#a78bfa', cursor: 'pointer' },
+  '.cm-gutter.cm-lineNumbers .cm-gutterElement:hover': { color: '#16a34a', cursor: 'pointer', fontWeight: '700' },
   '.cm-gutter.cm-lineNumbers .cm-gutterElement': { paddingLeft: '12px', paddingRight: '8px' },
   '.cm-activeLineGutter': { backgroundColor: 'transparent' },
-  '.cm-activeLine': { backgroundColor: 'rgba(255,255,255,0.02)' },
+  '.cm-activeLine': { backgroundColor: 'rgba(28,25,23,0.03)' },
   '.cm-selectionBackground, &.cm-focused .cm-selectionBackground': {
-    backgroundColor: 'rgba(139, 92, 246, 0.28) !important',
+    backgroundColor: 'rgba(255, 212, 59, 0.45) !important',
   },
-  '.cm-cursor': { borderLeftColor: '#c4b5fd' },
+  '.cm-cursor': { borderLeftColor: '#1c1917' },
 })
+
+// Handoff syntax mapping: purple keywords, green strings, muted italic comments
+const lightSyntax = HighlightStyle.define([
+  { tag: [tags.keyword, tags.modifier, tags.operatorKeyword], color: '#7c3aed', fontWeight: '700' },
+  { tag: [tags.string, tags.special(tags.string), tags.regexp], color: '#0f7a37' },
+  { tag: [tags.comment, tags.blockComment, tags.lineComment], color: '#8a827b', fontStyle: 'italic' },
+  { tag: [tags.number, tags.bool, tags.null], color: '#c2410c' },
+  { tag: [tags.function(tags.variableName), tags.function(tags.propertyName)], color: '#1e40af' },
+  { tag: [tags.typeName, tags.className, tags.namespace], color: '#ca8a04' },
+  { tag: [tags.propertyName, tags.attributeName], color: '#57534e' },
+  { tag: [tags.variableName, tags.definition(tags.variableName)], color: '#1c1917' },
+  { tag: [tags.punctuation, tags.bracket, tags.operator], color: '#57534e' },
+])
 
 interface Props {
   code: string
@@ -240,6 +257,11 @@ export function AnnotatedCodeEditor({
   )
 
   const [pendingForm, setPendingForm] = useState<PendingForm | null>(null)
+  // Flipped once the CodeMirror view exists — the decoration effect below must
+  // re-run then, because react-codemirror attaches our extensions (including
+  // decorationField) in an effect AFTER onCreateEditor fires, so any dispatch
+  // sent earlier is silently dropped.
+  const [viewReady, setViewReady] = useState(false)
   const selectionRef = useRef<{ start: number; end: number; text: string } | null>(null)
 
   useEffect(() => {
@@ -266,7 +288,7 @@ export function AnnotatedCodeEditor({
     )
     view.dispatch({ effects: setDecorationsEffect.of(decos) })
     requestAnimationFrame(() => view.requestMeasure())
-  }, [comments, pendingForm])
+  }, [comments, pendingForm, viewReady])
 
   const openFormRef = useRef<(clickedLine: number) => void>(() => {})
   openFormRef.current = (clickedLine: number) => {
@@ -322,7 +344,7 @@ export function AnnotatedCodeEditor({
   )
 
   const extensions = useMemo(
-    () => [langExt, decorationField, lineNumbersExt, selectionExt, editorTheme],
+    () => [langExt, decorationField, lineNumbersExt, selectionExt, editorTheme, syntaxHighlighting(lightSyntax)],
     [langExt, lineNumbersExt, selectionExt],
   )
 
@@ -363,21 +385,21 @@ export function AnnotatedCodeEditor({
 
   return (
     <div className="relative flex flex-col">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#161b22] border border-b-0 border-[#30363d] rounded-t-lg">
-        <div className="flex gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-          <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
-          <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-cream-2 border-2.5 border-b-0 border-ink rounded-t-pop">
+        <div className="flex gap-2">
+          <span className="w-3 h-3 rounded-full border-2 border-ink bg-coral" />
+          <span className="w-3 h-3 rounded-full border-2 border-ink bg-hi" />
+          <span className="w-3 h-3 rounded-full border-2 border-ink bg-brand" />
         </div>
-        <span className="text-xs text-slate-600 font-mono">{language} · {lineCount} lines</span>
+        <span className="text-xs text-ink-2 font-mono font-bold">{language} · {lineCount} lines</span>
         {!readOnly ? (
-          <span className="text-xs text-slate-600">
+          <span className="text-xs text-ink-2 font-medium">
             {comments.length > 0
               ? `${comments.length} annotation${comments.length !== 1 ? 's' : ''} · click line № to add`
               : 'Click a line number to annotate'}
           </span>
         ) : (
-          <span className="text-xs text-violet-400">
+          <span className="text-xs text-brand font-bold">
             {comments.length > 0
               ? `${comments.length} annotation${comments.length !== 1 ? 's' : ''}`
               : 'No annotations'}
@@ -385,27 +407,15 @@ export function AnnotatedCodeEditor({
         )}
       </div>
 
-      <div className="border border-[#30363d] rounded-b-lg overflow-hidden">
+      <div className="border-2.5 border-ink rounded-b-pop overflow-hidden shadow-hard">
         <CodeMirror
           value={code}
           extensions={extensions}
-          theme={oneDark}
+          theme="none"
           editable={false}
           onCreateEditor={(view) => {
             viewRef.current = view
-            if (initialComments.length > 0) {
-              const decos = buildDecorations(
-                comments.map((c) => ({
-                  startLine: c.startLine,
-                  endLine: c.endLine,
-                  colorIndex: c.colorIndex,
-                  widget: c.widget,
-                })),
-                null,
-                view.state.doc,
-              )
-              view.dispatch({ effects: setDecorationsEffect.of(decos) })
-            }
+            setViewReady(true)
           }}
           basicSetup={{
             lineNumbers: false,

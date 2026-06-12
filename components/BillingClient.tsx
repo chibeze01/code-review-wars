@@ -2,13 +2,35 @@
 
 import { useState } from 'react'
 
-const VOLT = '#ccff00'
-const RED = '#cf0a2c'
-
+// Real Stripe packs — keep in sync with /api/stripe/checkout and the landing page
 const CREDIT_PACKS = [
-  { pack: 'starter',  credits: 10,  price: '$5',  pricePerCredit: '$0.50', popular: false },
-  { pack: 'standard', credits: 50,  price: '$18', pricePerCredit: '$0.36', popular: true  },
-  { pack: 'pro',      credits: 150, price: '$45', pricePerCredit: '$0.30', popular: false },
+  {
+    pack: 'starter',
+    name: 'Starter',
+    credits: 10,
+    price: '$5',
+    was: '$10',
+    pricePerCredit: '$0.50 / review',
+    popular: false,
+  },
+  {
+    pack: 'standard',
+    name: 'Standard',
+    credits: 50,
+    price: '$18',
+    was: '$36',
+    pricePerCredit: '$0.36 / review',
+    popular: true,
+  },
+  {
+    pack: 'pro',
+    name: 'Pro',
+    credits: 150,
+    price: '$45',
+    was: '$90',
+    pricePerCredit: '$0.30 / review',
+    popular: false,
+  },
 ] as const
 
 interface Transaction {
@@ -49,83 +71,72 @@ export function BillingClient({ credits, transactions, success, canceled }: Prop
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="h-px w-10" style={{ background: RED }} />
-        <span className="text-xs font-bold uppercase tracking-[0.3em]" style={{ color: RED }}>
-          Refuel
-        </span>
+    <div className="max-w-3xl mx-auto px-[22px] py-10">
+      <div className="font-display font-bold text-sm text-brand uppercase tracking-[0.08em] mb-3">
+        top up
       </div>
-      <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-8">
-        Buy credits<span style={{ color: VOLT }}>.</span>
+      <h1 className="font-display font-extrabold leading-[1.04] text-4xl mb-8">
+        Buy <span className="mark-hi mark-green">credits.</span>
       </h1>
 
       {success && (
-        <div className="mb-8 border px-4 py-3 text-sm font-bold" style={{ borderColor: `${VOLT}66`, background: `${VOLT}10`, color: VOLT }}>
-          Payment successful — credits have been added to your account.
+        <div className="mb-8 bg-brand-soft border-2.5 border-ink rounded-pop px-4 py-3 text-sm font-bold shadow-hard-sm">
+          🎉 Payment successful — credits have been added to your account.
         </div>
       )}
       {canceled && (
-        <div className="mb-8 border border-white/15 bg-white/5 px-4 py-3 text-sm text-neutral-400">
+        <div className="mb-8 bg-cream-2 border-2.5 border-ink rounded-pop px-4 py-3 text-sm font-medium text-ink-2 shadow-hard-sm">
           Payment canceled. No charges were made.
         </div>
       )}
       {buyError && (
-        <div className="mb-8 border px-4 py-3 text-sm font-bold" style={{ borderColor: `${RED}66`, background: `${RED}10`, color: RED }}>
-          {buyError}
+        <div className="mb-8 bg-coral-soft border-2.5 border-ink rounded-pop px-4 py-3 text-sm font-bold shadow-hard-sm">
+          ⚠️ {buyError}
         </div>
       )}
 
       {/* Balance card */}
-      <div className="border border-white/10 bg-[#101010] p-6 mb-8 flex items-center justify-between">
+      <div className="card-pop p-6 mb-10 flex items-center justify-between flex-wrap gap-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-1">Current balance</p>
-          <p className="text-4xl font-black italic" style={{ color: credits === 0 ? RED : VOLT }}>
-            {credits} <span className="text-lg text-neutral-500 not-italic font-bold uppercase">credits</span>
+          <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-3 mb-1">Current balance</p>
+          <p className={`font-display font-extrabold text-4xl ${credits === 0 ? 'text-coral' : 'text-brand'}`}>
+            {credits} <span className="text-lg text-ink-2 font-bold">credits</span>
           </p>
         </div>
-        <div className="text-right text-[11px] text-neutral-600 uppercase tracking-wider leading-relaxed">
+        <div className="text-right text-xs text-ink-3 leading-relaxed font-medium">
           <p>1 credit = 1 full session</p>
           <p>(code generation + AI evaluation)</p>
         </div>
       </div>
 
-      {/* Credit packs */}
-      <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-4">Pick your pack</p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-        {CREDIT_PACKS.map(({ pack, credits: c, price, pricePerCredit, popular }) => (
+      {/* Credit packs — mirrors the landing pricing cards */}
+      <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-3 mb-5">Pick your pack</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-12 items-start">
+        {CREDIT_PACKS.map(({ pack, name, credits: c, price, was, pricePerCredit, popular }) => (
           <div
             key={pack}
-            className={`relative bg-[#101010] border p-5 flex flex-col gap-4 transition-all hover:-translate-y-1 ${
-              popular ? '' : 'border-white/10 hover:border-white/30'
+            className={`relative p-5 bg-paper border-2.5 rounded-pop-lg ${
+              popular ? 'border-brand shadow-hard-lg -translate-y-1.5' : 'border-ink shadow-hard'
             }`}
-            style={popular ? { borderColor: VOLT } : undefined}
           >
             {popular && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase italic bg-[#ccff00] text-black px-3 py-1 -skew-x-6 whitespace-nowrap">
-                <span className="inline-block skew-x-6">Best value</span>
+              <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand text-white font-display font-extrabold text-[11px] px-3.5 py-1 border-2.5 border-ink rounded-full shadow-hard-sm whitespace-nowrap">
+                🔥 MOST POPULAR
               </span>
             )}
-            <div>
-              <p className="text-3xl font-black italic" style={{ color: popular ? VOLT : '#f5f5f3' }}>{c}</p>
-              <p className="text-[10px] uppercase tracking-widest text-neutral-600">credits</p>
+            <h3 className="font-display font-extrabold text-lg">{name}</h3>
+            <div className="flex items-baseline gap-2 mt-2 mb-0.5">
+              <span className="font-display font-extrabold text-[34px]">{price}</span>
+              <span className="text-base text-ink-3 line-through font-bold">{was}</span>
             </div>
-            <div>
-              <p className="text-xl font-black text-neutral-100">{price}</p>
-              <p className="text-[11px] text-neutral-600">{pricePerCredit} / credit</p>
-            </div>
+            <p className="font-bold text-brand text-sm">{c} credits</p>
+            <p className="text-[11px] text-ink-3 mt-0.5">{pricePerCredit}</p>
             <button
               onClick={() => handleBuy(pack)}
               disabled={!!loading}
-              className={`mt-auto py-2.5 text-xs font-black uppercase italic tracking-tight -skew-x-6 transition-all disabled:opacity-50 ${
-                popular
-                  ? 'bg-[#ccff00] hover:bg-[#b9eb00] text-black'
-                  : 'border border-white/20 text-neutral-300 hover:border-white/50 hover:text-white'
-              }`}
+              className={`btn-pop btn-pop-sm w-full mt-4 ${popular ? 'btn-pop-green' : ''}`}
             >
-              <span className="inline-block skew-x-6">
-                {loading === pack ? 'Redirecting…' : `Buy ${c} credits`}
-              </span>
+              {loading === pack ? 'Redirecting…' : `Buy ${c} credits`}
             </button>
           </div>
         ))}
@@ -134,33 +145,27 @@ export function BillingClient({ credits, transactions, success, canceled }: Prop
       {/* Transaction history */}
       {transactions.length > 0 && (
         <>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-500 mb-4">Transaction history</p>
-          <div className="border border-white/10 bg-[#101010] divide-y divide-white/5">
+          <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-3 mb-4">Transaction history</p>
+          <div className="card-pop !shadow-hard-sm divide-y-2 divide-cream-2 overflow-hidden">
             {transactions.map((tx) => (
               <div key={tx.id} className="flex items-center justify-between px-4 py-3 text-sm">
                 <div className="flex items-center gap-3 min-w-0">
                   <span
-                    className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 border shrink-0"
-                    style={
-                      tx.type === 'purchase'
-                        ? { borderColor: `${VOLT}55`, color: VOLT }
-                        : tx.type === 'bonus'
-                        ? { borderColor: '#8fb33c55', color: '#8fb33c' }
-                        : { borderColor: `${RED}55`, color: RED }
-                    }
+                    className={`text-[10px] font-display font-bold uppercase px-2 py-0.5 border-2 border-ink rounded-full shrink-0 ${
+                      tx.type === 'purchase' ? 'bg-brand-soft' : tx.type === 'bonus' ? 'bg-hi-soft' : 'bg-coral-soft'
+                    }`}
                   >
                     {tx.type}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-neutral-300 truncate">{tx.description ?? tx.type}</p>
-                    <p className="text-[11px] text-neutral-600 mt-0.5">
+                    <p className="text-ink truncate font-medium">{tx.description ?? tx.type}</p>
+                    <p className="text-[11px] text-ink-3 mt-0.5">
                       {new Date(tx.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
                 <span
-                  className="font-black italic shrink-0 ml-4"
-                  style={{ color: tx.amount > 0 ? VOLT : RED }}
+                  className={`font-mono font-bold shrink-0 ml-4 ${tx.amount > 0 ? 'text-brand' : 'text-coral'}`}
                 >
                   {tx.amount > 0 ? '+' : ''}{tx.amount}
                 </span>

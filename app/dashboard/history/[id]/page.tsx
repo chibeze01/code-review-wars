@@ -23,7 +23,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   if (!session) notFound()
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f3]">
+    <div className="min-h-screen bg-cream text-ink">
       <AppNav credits={profile?.credits ?? 0} />
       <SessionReplayPanel session={session} />
     </div>
