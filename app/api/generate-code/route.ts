@@ -210,7 +210,8 @@ Return this exact JSON structure:
 
   // Session rows are created server-side (service role) so a client can never
   // forge a row with a fabricated score/grade/completed status.
-  const { data: sessionRow } = await createAdminClient()
+  const admin = createAdminClient()
+  const { data: sessionRow, error: insertError } = await admin
     .from('review_sessions')
     .insert({
       user_id: user.id,
@@ -225,6 +226,23 @@ Return this exact JSON structure:
     })
     .select('id')
     .single()
+
+  // The credit was already deducted. If the row didn't get created, refund it
+  // so the user isn't charged for a session they can never enter or resume.
+  if (insertError || !sessionRow) {
+    console.error('Session insert failed after credit deduct:', insertError)
+    await admin.rpc('add_credits', { p_user_id: user.id, p_amount: 1 })
+    await admin.from('credit_transactions').insert({
+      user_id: user.id,
+      amount: 1,
+      type: 'bonus',
+      description: 'Refund — session creation failed',
+    })
+    return NextResponse.json(
+      { error: 'Could not start the session. Your credit was refunded — please try again.' },
+      { status: 500 },
+    )
+  }
 
   return NextResponse.json({
     code: payload.code,

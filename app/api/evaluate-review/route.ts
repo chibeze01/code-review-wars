@@ -192,7 +192,7 @@ Return this exact JSON:
     // only record the result here and flip status to completed. Scoring fields
     // are written with the service role so the client can never set its own
     // score/grade/status (RLS blocks those columns for authenticated users).
-    await createAdminClient()
+    const { data: completedRows, error: completeError } = await createAdminClient()
       .from('review_sessions')
       .update({
         annotations: comments,
@@ -210,6 +210,17 @@ Return this exact JSON:
       })
       .eq('id', sessionId)
       .eq('user_id', user.id)
+      .eq('status', 'in_progress')   // atomic claim — only an open draft can complete
+      .select('id')
+
+    if (completeError) {
+      return NextResponse.json({ error: 'Failed to save evaluation' }, { status: 500 })
+    }
+    // Lost the race to a concurrent submit (or already completed): don't return a
+    // graded result for a session that was already closed.
+    if (!completedRows || completedRows.length === 0) {
+      return NextResponse.json({ error: 'This session has already been submitted' }, { status: 409 })
+    }
 
     // Current balance (unchanged at submit time) for the UI
     const { data: updated } = await supabase
