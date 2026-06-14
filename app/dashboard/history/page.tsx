@@ -11,15 +11,22 @@ export default async function HistoryPage() {
 
   if (!user) redirect('/login')
 
-  const [{ data: profile }, { data: sessions }, { data: allScores }] = await Promise.all([
+  const [{ data: profile }, { data: sessions }, { data: unfinished }, { data: allScores }] = await Promise.all([
     supabase.from('profiles').select('credits').eq('id', user.id).single(),
     supabase
       .from('review_sessions')
       .select('id, scenario, language, score, grade, created_at, brilliantFinds:feedback->brilliantFinds')
       .eq('user_id', user.id)
+      .eq('status', 'completed')
       .order('created_at', { ascending: false })
       .limit(50),
-    supabase.from('review_sessions').select('score').eq('user_id', user.id),
+    supabase
+      .from('review_sessions')
+      .select('id, scenario, language, created_at')
+      .eq('user_id', user.id)
+      .eq('status', 'in_progress')
+      .order('created_at', { ascending: false }),
+    supabase.from('review_sessions').select('score').eq('user_id', user.id).eq('status', 'completed'),
   ])
 
   const scores = (allScores ?? []).map((s) => s.score ?? 0)
@@ -80,13 +87,47 @@ export default async function HistoryPage() {
           </div>
         </div>
 
-        {!sessions?.length ? (
-          <div className="border-2 border-dashed border-ink/25 rounded-pop-lg p-12 text-center">
-            <p className="text-sm text-ink-2 mb-5">No reviews yet. Your first bug is waiting. 🐛</p>
-            <Link href="/dashboard/train" className="btn-pop btn-pop-green">
-              First session →
-            </Link>
+        {(unfinished?.length ?? 0) > 0 && (
+          <div className="mb-7 flex flex-col gap-3">
+            <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2">
+              ⏳ Unfinished sessions
+            </p>
+            {unfinished!.map((s) => (
+              <Link
+                key={s.id}
+                href={`/dashboard/train?resume=${s.id}`}
+                className="card-pop !shadow-hard-sm p-4 flex items-center gap-4 border-l-[6px] border-l-hi transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-hard group"
+              >
+                <div className="w-12 h-12 border-2.5 border-ink rounded-[12px] bg-hi-soft flex items-center justify-center text-xl shrink-0">
+                  ⏳
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate group-hover:text-brand transition-colors">
+                    {s.scenario ?? 'Code review session'}
+                  </p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[10px] font-display font-bold border-2 border-ink rounded-full px-2 py-0.5 bg-cream-2">
+                      {s.language}
+                    </span>
+                    <span className="text-[11px] text-ink-3">{new Date(s.created_at).toLocaleDateString()}</span>
+                    <span className="text-[11px] font-bold text-[#854d0e]">In progress · credit already spent</span>
+                  </div>
+                </div>
+                <span className="font-display font-bold text-xs text-brand shrink-0 group-hover:underline">Resume →</span>
+              </Link>
+            ))}
           </div>
+        )}
+
+        {!sessions?.length ? (
+          (unfinished?.length ?? 0) > 0 ? null : (
+            <div className="border-2 border-dashed border-ink/25 rounded-pop-lg p-12 text-center">
+              <p className="text-sm text-ink-2 mb-5">No reviews yet. Your first bug is waiting. 🐛</p>
+              <Link href="/dashboard/train" className="btn-pop btn-pop-green">
+                First session →
+              </Link>
+            </div>
+          )
         ) : (
           <div className="flex flex-col gap-3.5">
             {sessions.map((s) => {

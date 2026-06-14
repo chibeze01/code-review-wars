@@ -15,6 +15,7 @@ export default async function DashboardPage() {
       .from('review_sessions')
       .select('id, scenario, language, score, grade, created_at, issueResults:feedback->issueResults, durationSeconds:feedback->durationSeconds, brilliantFinds:feedback->brilliantFinds')
       .eq('user_id', user.id)
+      .eq('status', 'completed')   // exclude unfinished drafts from stats
       .order('created_at', { ascending: false }),
   ])
 

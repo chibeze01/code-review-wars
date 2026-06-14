@@ -19,6 +19,28 @@ export interface GeneratedCode {
   language: Language
 }
 
+// generate-code response — a session is started (and a credit deducted) at
+// generation time, so the client gets the session id and updated balance back.
+export interface GenerateResponse extends GeneratedCode {
+  sessionId: string
+  creditsRemaining: number
+}
+
+// An unfinished session restored when the user reloads or resumes from history.
+export interface InProgressSession {
+  id: string
+  code: string
+  scenario: string
+  language: Language
+  issues: CodeIssue[]
+  domain: Domain
+  // The original custom-domain prompt, restored so a resumed custom session can
+  // still generate the next challenge. Null for the built-in domains.
+  context: string | null
+  annotations: CodeComment[]
+  generalNotes: string
+}
+
 // Structured per-issue outcome — powers the category performance charts
 export interface IssueResult {
   index: number

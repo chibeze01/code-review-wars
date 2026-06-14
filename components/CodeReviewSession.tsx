@@ -16,16 +16,34 @@ interface Props {
   generated: GeneratedCode
   onSubmit: (comments: CodeComment[], generalNotes: string) => void
   loading: boolean
+  initialComments?: CodeComment[]
+  initialNotes?: string
+  // Fires on every annotation/notes change so the parent can autosave the
+  // in-progress session (debounced upstream).
+  onProgress?: (comments: CodeComment[], generalNotes: string) => void
 }
 
-export function CodeReviewSession({ generated, onSubmit, loading }: Props) {
-  const commentsRef = useRef<CodeComment[]>([])
-  const [commentCount, setCommentCount] = useState(0)
-  const [generalNotes, setGeneralNotes] = useState('')
+export function CodeReviewSession({
+  generated,
+  onSubmit,
+  loading,
+  initialComments = [],
+  initialNotes = '',
+  onProgress,
+}: Props) {
+  const commentsRef = useRef<CodeComment[]>(initialComments)
+  const [commentCount, setCommentCount] = useState(initialComments.length)
+  const [generalNotes, setGeneralNotes] = useState(initialNotes)
 
   function handleCommentsChange(comments: CodeComment[]) {
     commentsRef.current = comments
     setCommentCount(comments.length)
+    onProgress?.(comments, generalNotes)
+  }
+
+  function handleNotesChange(notes: string) {
+    setGeneralNotes(notes)
+    onProgress?.(commentsRef.current, notes)
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -56,6 +74,7 @@ export function CodeReviewSession({ generated, onSubmit, loading }: Props) {
       <AnnotatedCodeEditor
         code={generated.code}
         language={generated.language}
+        initialComments={initialComments}
         onCommentsChange={handleCommentsChange}
       />
 
@@ -68,7 +87,7 @@ export function CodeReviewSession({ generated, onSubmit, loading }: Props) {
         </label>
         <textarea
           value={generalNotes}
-          onChange={(e) => setGeneralNotes(e.target.value)}
+          onChange={(e) => handleNotesChange(e.target.value)}
           placeholder="e.g. 'Overall the error handling is weak, the auth layer has several gaps…'"
           rows={4}
           className="w-full bg-paper border-2.5 border-ink rounded-pop px-4 py-3 text-sm text-ink placeholder-ink-3 focus:outline-none focus:bg-cream-2/40 resize-none transition-colors"
