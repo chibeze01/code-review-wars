@@ -90,6 +90,7 @@ function InlineCommentCard({
     >
       <div className="flex items-center justify-between px-4 py-2">
         <button
+          type="button"
           onClick={onToggleCollapse}
           className="flex items-center gap-1.5 group hover:opacity-80 transition-opacity"
         >
@@ -107,6 +108,7 @@ function InlineCommentCard({
         {!readOnly && (
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={onEdit}
               className="text-ink-3 hover:text-brand text-xs px-1 font-semibold transition-colors"
               title="Edit annotation"
@@ -114,6 +116,7 @@ function InlineCommentCard({
               Edit
             </button>
             <button
+              type="button"
               onClick={onDelete}
               className="text-ink-3 hover:text-coral text-xs px-1 transition-colors"
               title="Delete annotation"
@@ -173,7 +176,7 @@ function InlineCommentForm({
     <div className="bg-cream border-y-2 border-brand/40">
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <span className="text-xs font-bold text-brand font-mono">{lineLabel}</span>
-        <button onClick={onCancel} className="text-ink-3 hover:text-ink text-xs transition-colors">✕</button>
+        <button type="button" onClick={onCancel} className="text-ink-3 hover:text-ink text-xs transition-colors">✕</button>
       </div>
       {selectedText.trim() && (
         <div className="mx-4 mb-2">
@@ -200,6 +203,7 @@ function InlineCommentForm({
         />
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => text.trim() && onSave(text.trim())}
             disabled={!text.trim()}
             className="px-3.5 py-1.5 rounded-lg border-2 border-ink bg-brand text-white text-xs font-display font-bold shadow-hard-sm disabled:opacity-40 hover:-translate-x-px hover:-translate-y-px active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all"
@@ -207,6 +211,7 @@ function InlineCommentForm({
             {saveLabel}
           </button>
           <button
+            type="button"
             onClick={onCancel}
             className="px-3.5 py-1.5 rounded-lg border-2 border-ink/25 bg-paper text-ink-2 text-xs font-display font-bold hover:border-ink transition-colors"
           >
@@ -481,12 +486,14 @@ export function AnnotatedCodeEditor({
                 </span>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
+                    type="button"
                     onClick={() => { setPendingForm(null); setEditingId(c.id) }}
                     className="text-ink-3 hover:text-brand font-semibold px-1 transition-colors"
                   >
                     Edit
                   </button>
                   <button
+                    type="button"
                     onClick={() => deleteComment(c.id)}
                     className="text-ink-3 hover:text-coral px-1 transition-colors"
                   >

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { GeneratedCode, CodeComment, EvaluationResult } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -188,8 +189,10 @@ Return this exact JSON:
     }
 
     // Submitting closes the session — the credit was charged at the start, so we
-    // only record the result here and flip status to completed.
-    await supabase
+    // only record the result here and flip status to completed. Scoring fields
+    // are written with the service role so the client can never set its own
+    // score/grade/status (RLS blocks those columns for authenticated users).
+    await createAdminClient()
       .from('review_sessions')
       .update({
         annotations: comments,

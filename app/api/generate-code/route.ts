@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { Language, Domain, GeneratedCode, GenerateResponse, CodeIssue } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -193,10 +194,23 @@ Return this exact JSON structure:
   )
 
   if (deductError) {
-    return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
+    // start_session_deduct RAISEs this message only when the balance is truly 0.
+    if ((deductError.message ?? '').toLowerCase().includes('insufficient credits')) {
+      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
+    }
+    // Anything else (e.g. migration 003 not applied, so the function/columns are
+    // missing) is a real server error — surface it instead of masking it as a
+    // credit problem.
+    console.error('start_session_deduct failed:', deductError)
+    return NextResponse.json(
+      { error: `Could not start session: ${deductError.message ?? 'database error'}` },
+      { status: 500 },
+    )
   }
 
-  const { data: sessionRow } = await supabase
+  // Session rows are created server-side (service role) so a client can never
+  // forge a row with a fabricated score/grade/completed status.
+  const { data: sessionRow } = await createAdminClient()
     .from('review_sessions')
     .insert({
       user_id: user.id,
