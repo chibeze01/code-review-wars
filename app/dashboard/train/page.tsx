@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from '@/components/DashboardClient'
 import type { InProgressSession } from '@/types'
 
-const RESUME_COLS = 'id, code, scenario, language, issues, domain, annotations, general_notes'
+const RESUME_COLS = 'id, code, scenario, language, issues, domain, context, annotations, general_notes'
 
 export default async function TrainPage({
   searchParams,
@@ -46,6 +46,7 @@ export default async function TrainPage({
         language: row.language as InProgressSession['language'],
         issues: (row.issues as InProgressSession['issues']) ?? [],
         domain: (row.domain as InProgressSession['domain']) ?? 'general',
+        context: row.context ?? null,
         annotations: (row.annotations as InProgressSession['annotations']) ?? [],
         generalNotes: row.general_notes ?? '',
       }

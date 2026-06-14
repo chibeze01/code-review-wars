@@ -220,6 +220,8 @@ Return this exact JSON structure:
       language,
       code: payload.code,
       domain,
+      // Persist the custom prompt so a resumed custom session can regenerate.
+      context: domain === 'custom' ? (context?.trim() ?? null) : null,
       issues: payload.issues,
       annotations: [],
       credits_used: 1,

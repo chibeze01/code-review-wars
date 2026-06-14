@@ -34,6 +34,9 @@ export interface InProgressSession {
   language: Language
   issues: CodeIssue[]
   domain: Domain
+  // The original custom-domain prompt, restored so a resumed custom session can
+  // still generate the next challenge. Null for the built-in domains.
+  context: string | null
   annotations: CodeComment[]
   generalNotes: string
 }

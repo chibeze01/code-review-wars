@@ -30,7 +30,8 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
 
   const [language, setLanguage] = useState<Language>(initialSession?.language ?? 'TypeScript')
   const [domain, setDomain] = useState<Domain>(initialSession?.domain ?? 'ecommerce')
-  const [context, setContext] = useState<string | undefined>(undefined)
+  // Restore the custom prompt so a resumed custom session's "Next challenge" works.
+  const [context, setContext] = useState<string | undefined>(initialSession?.context ?? undefined)
 
   const [generated, setGenerated] = useState<GeneratedCode | null>(
     initialSession
