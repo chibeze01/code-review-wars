@@ -106,11 +106,11 @@ function InlineCommentCard({
           </span>
         </button>
         {!readOnly && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onEdit}
-              className="text-ink-3 hover:text-brand text-xs px-1 font-semibold transition-colors"
+              className="text-[11px] font-display font-bold px-2 py-0.5 rounded-md border-2 border-ink/15 text-ink-2 hover:border-brand hover:text-brand transition-colors"
               title="Edit annotation"
             >
               Edit
@@ -118,10 +118,10 @@ function InlineCommentCard({
             <button
               type="button"
               onClick={onDelete}
-              className="text-ink-3 hover:text-coral text-xs px-1 transition-colors"
+              className="text-[11px] font-display font-bold px-2 py-0.5 rounded-md border-2 border-ink/15 text-ink-2 hover:border-coral hover:text-coral transition-colors"
               title="Delete annotation"
             >
-              ✕
+              Delete
             </button>
           </div>
         )}
@@ -461,50 +461,6 @@ export function AnnotatedCodeEditor({
           }}
         />
       </div>
-
-      {!readOnly && comments.length > 0 && (
-        <div className="mt-4 flex flex-col gap-2">
-          <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2">
-            Your annotations ({comments.length})
-          </p>
-          {comments.map((c) => {
-            const col = COMMENT_COLORS[c.colorIndex % COMMENT_COLORS.length]
-            return (
-              <div
-                key={c.id}
-                className="rounded-lg px-3 py-2 flex gap-3 text-xs items-start"
-                style={{ backgroundColor: col.bg, border: `2px solid ${col.bar}55` }}
-              >
-                <span
-                  className="font-mono font-bold shrink-0 px-1.5 py-0.5 rounded"
-                  style={{ color: col.text, backgroundColor: col.badge }}
-                >
-                  L{c.startLine}{c.startLine !== c.endLine ? `–${c.endLine}` : ''}
-                </span>
-                <span style={{ color: col.text }} className="leading-relaxed flex-1 break-words">
-                  {c.comment}
-                </span>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => { setPendingForm(null); setEditingId(c.id) }}
-                    className="text-ink-3 hover:text-brand font-semibold px-1 transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteComment(c.id)}
-                    className="text-ink-3 hover:text-coral px-1 transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
 
       {comments.map((c) =>
         createPortal(
