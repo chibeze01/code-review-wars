@@ -83,22 +83,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Check credit balance
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('credits')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || profile.credits < 1) {
-    return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
-  }
-
-  const { generated, comments, generalNotes, durationSeconds } = await request.json() as {
-    generated: GeneratedCode
+  const { sessionId, comments, generalNotes, durationSeconds } = await request.json() as {
+    sessionId: string
     comments: CodeComment[]
     generalNotes: string
     durationSeconds?: number
+  }
+
+  if (!sessionId) {
+    return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 })
+  }
+
+  // The credit was already deducted when the session started. Load the planted
+  // issues and code from the row server-side rather than trusting the client.
+  const { data: session } = await supabase
+    .from('review_sessions')
+    .select('id, code, scenario, language, issues, status')
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!session || !session.code) {
+    return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+  }
+  if (session.status === 'completed') {
+    return NextResponse.json({ error: 'This session has already been submitted' }, { status: 409 })
+  }
+
+  const generated: GeneratedCode = {
+    code: session.code,
+    scenario: session.scenario ?? '',
+    issues: (session.issues as GeneratedCode['issues']) ?? [],
+    language: session.language as GeneratedCode['language'],
   }
 
   const system = `You are a senior software engineer and technical interviewer evaluating a candidate's code review skills.
@@ -171,33 +187,28 @@ Return this exact JSON:
       )
     }
 
-    // Deduct 1 credit atomically via DB function
-    const { error: deductError } = await supabase.rpc('deduct_credit', { p_user_id: user.id })
-    if (deductError) {
-      return NextResponse.json({ error: 'Failed to deduct credit' }, { status: 500 })
-    }
+    // Submitting closes the session — the credit was charged at the start, so we
+    // only record the result here and flip status to completed.
+    await supabase
+      .from('review_sessions')
+      .update({
+        annotations: comments,
+        general_notes: generalNotes,
+        score: evaluation.score,
+        grade: evaluation.grade,
+        feedback: {
+          ...evaluation,
+          generatedIssues: generated.issues,
+          durationSeconds: typeof durationSeconds === 'number' && durationSeconds > 0
+            ? Math.round(durationSeconds)
+            : null,
+        },
+        status: 'completed',
+      })
+      .eq('id', sessionId)
+      .eq('user_id', user.id)
 
-    // Persist the session — durationSeconds rides along in the feedback jsonb
-    // so no schema migration is needed for dashboard stats
-    await supabase.from('review_sessions').insert({
-      user_id: user.id,
-      scenario: generated.scenario,
-      language: generated.language,
-      code: generated.code,
-      annotations: comments,
-      score: evaluation.score,
-      grade: evaluation.grade,
-      feedback: {
-        ...evaluation,
-        generatedIssues: generated.issues,
-        durationSeconds: typeof durationSeconds === 'number' && durationSeconds > 0
-          ? Math.round(durationSeconds)
-          : null,
-      },
-      credits_used: 1,
-    })
-
-    // Return updated balance
+    // Current balance (unchanged at submit time) for the UI
     const { data: updated } = await supabase
       .from('profiles')
       .select('credits')
@@ -206,7 +217,7 @@ Return this exact JSON:
 
     return NextResponse.json({
       evaluation,
-      creditsRemaining: updated?.credits ?? profile.credits - 1,
+      creditsRemaining: updated?.credits ?? 0,
     })
   } catch (e) {
     return NextResponse.json(

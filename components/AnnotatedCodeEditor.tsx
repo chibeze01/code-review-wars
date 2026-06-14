@@ -38,11 +38,13 @@ interface PendingForm {
 function InlineCommentCard({
   comment,
   readOnly,
+  onEdit,
   onDelete,
   onToggleCollapse,
 }: {
   comment: InternalComment
   readOnly: boolean
+  onEdit: () => void
   onDelete: () => void
   onToggleCollapse: () => void
 }) {
@@ -103,12 +105,22 @@ function InlineCommentCard({
           </span>
         </button>
         {!readOnly && (
-          <button
-            onClick={onDelete}
-            className="text-ink-3 hover:text-coral text-xs px-1 transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onEdit}
+              className="text-ink-3 hover:text-brand text-xs px-1 font-semibold transition-colors"
+              title="Edit annotation"
+            >
+              Edit
+            </button>
+            <button
+              onClick={onDelete}
+              className="text-ink-3 hover:text-coral text-xs px-1 transition-colors"
+              title="Delete annotation"
+            >
+              ✕
+            </button>
+          </div>
         )}
       </div>
       {comment.selectedText.trim() && (
@@ -129,20 +141,29 @@ function InlineCommentForm({
   startLine,
   endLine,
   selectedText,
+  initialText = '',
+  saveLabel = 'Save comment',
   onSave,
   onCancel,
 }: {
   startLine: number
   endLine: number
   selectedText: string
+  initialText?: string
+  saveLabel?: string
   onSave: (text: string) => void
   onCancel: () => void
 }) {
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialText)
   const ref = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    const id = setTimeout(() => ref.current?.focus(), 60)
+    const id = setTimeout(() => {
+      ref.current?.focus()
+      // place cursor at the end when editing existing text
+      const len = ref.current?.value.length ?? 0
+      ref.current?.setSelectionRange(len, len)
+    }, 60)
     return () => clearTimeout(id)
   }, [])
 
@@ -183,7 +204,7 @@ function InlineCommentForm({
             disabled={!text.trim()}
             className="px-3.5 py-1.5 rounded-lg border-2 border-ink bg-brand text-white text-xs font-display font-bold shadow-hard-sm disabled:opacity-40 hover:-translate-x-px hover:-translate-y-px active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all"
           >
-            Save comment
+            {saveLabel}
           </button>
           <button
             onClick={onCancel}
@@ -257,6 +278,7 @@ export function AnnotatedCodeEditor({
   )
 
   const [pendingForm, setPendingForm] = useState<PendingForm | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   // Flipped once the CodeMirror view exists — the decoration effect below must
   // re-run then, because react-codemirror attaches our extensions (including
   // decorationField) in an effect AFTER onCreateEditor fires, so any dispatch
@@ -368,7 +390,13 @@ export function AnnotatedCodeEditor({
     setPendingForm(null)
   }
 
+  function editComment(id: string, text: string) {
+    setComments((prev) => prev.map((c) => (c.id === id ? { ...c, comment: text } : c)))
+    setEditingId(null)
+  }
+
   function deleteComment(id: string) {
+    if (editingId === id) setEditingId(null)
     setComments((prev) => {
       const next = prev.filter((c) => c.id !== id)
       return next.map((c, i) => ({ ...c, colorIndex: i % COMMENT_COLORS.length }))
@@ -429,14 +457,69 @@ export function AnnotatedCodeEditor({
         />
       </div>
 
+      {!readOnly && comments.length > 0 && (
+        <div className="mt-4 flex flex-col gap-2">
+          <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2">
+            Your annotations ({comments.length})
+          </p>
+          {comments.map((c) => {
+            const col = COMMENT_COLORS[c.colorIndex % COMMENT_COLORS.length]
+            return (
+              <div
+                key={c.id}
+                className="rounded-lg px-3 py-2 flex gap-3 text-xs items-start"
+                style={{ backgroundColor: col.bg, border: `2px solid ${col.bar}55` }}
+              >
+                <span
+                  className="font-mono font-bold shrink-0 px-1.5 py-0.5 rounded"
+                  style={{ color: col.text, backgroundColor: col.badge }}
+                >
+                  L{c.startLine}{c.startLine !== c.endLine ? `–${c.endLine}` : ''}
+                </span>
+                <span style={{ color: col.text }} className="leading-relaxed flex-1 break-words">
+                  {c.comment}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => { setPendingForm(null); setEditingId(c.id) }}
+                    className="text-ink-3 hover:text-brand font-semibold px-1 transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteComment(c.id)}
+                    className="text-ink-3 hover:text-coral px-1 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {comments.map((c) =>
         createPortal(
-          <InlineCommentCard
-            comment={c}
-            readOnly={readOnly}
-            onDelete={() => deleteComment(c.id)}
-            onToggleCollapse={() => toggleCollapse(c.id)}
-          />,
+          editingId === c.id && !readOnly ? (
+            <InlineCommentForm
+              startLine={c.startLine}
+              endLine={c.endLine}
+              selectedText={c.selectedText}
+              initialText={c.comment}
+              saveLabel="Update comment"
+              onSave={(text) => editComment(c.id, text)}
+              onCancel={() => setEditingId(null)}
+            />
+          ) : (
+            <InlineCommentCard
+              comment={c}
+              readOnly={readOnly}
+              onEdit={() => { setPendingForm(null); setEditingId(c.id) }}
+              onDelete={() => deleteComment(c.id)}
+              onToggleCollapse={() => toggleCollapse(c.id)}
+            />
+          ),
           c.widget.dom,
         ),
       )}

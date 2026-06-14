@@ -8,7 +8,10 @@ import { FeedbackPanel } from './FeedbackPanel'
 import { RankBadge } from './RankBadge'
 import { AppNav } from './AppNav'
 import { getRankProgress, type Rank } from '@/lib/ranks'
-import type { AppPhase, GeneratedCode, EvaluationResult, Language, Domain, CodeComment } from '@/types'
+import type {
+  AppPhase, GeneratedCode, GenerateResponse, EvaluationResult,
+  Language, Domain, CodeComment, InProgressSession,
+} from '@/types'
 
 interface Props {
   userId: string
@@ -16,18 +19,32 @@ interface Props {
   initialCredits: number
   initialHonor: number
   initialReviews: number
+  // An unfinished session to drop straight back into (page reload / resume).
+  initialSession?: InProgressSession | null
 }
 
-export function DashboardClient({ initialCredits, initialHonor, initialReviews }: Props) {
-  const [phase, setPhase] = useState<AppPhase>('setup')
+export function DashboardClient({ initialCredits, initialHonor, initialReviews, initialSession }: Props) {
+  const [phase, setPhase] = useState<AppPhase>(initialSession ? 'reviewing' : 'setup')
   const [error, setError] = useState<string | null>(null)
   const [credits, setCredits] = useState(initialCredits)
 
-  const [language, setLanguage] = useState<Language>('TypeScript')
-  const [domain, setDomain] = useState<Domain>('ecommerce')
+  const [language, setLanguage] = useState<Language>(initialSession?.language ?? 'TypeScript')
+  const [domain, setDomain] = useState<Domain>(initialSession?.domain ?? 'ecommerce')
   const [context, setContext] = useState<string | undefined>(undefined)
 
-  const [generated, setGenerated] = useState<GeneratedCode | null>(null)
+  const [generated, setGenerated] = useState<GeneratedCode | null>(
+    initialSession
+      ? {
+          code: initialSession.code,
+          scenario: initialSession.scenario,
+          issues: initialSession.issues,
+          language: initialSession.language,
+        }
+      : null,
+  )
+  const [sessionId, setSessionId] = useState<string | null>(initialSession?.id ?? null)
+  const [resumeComments] = useState<CodeComment[]>(initialSession?.annotations ?? [])
+  const [resumeNotes] = useState<string>(initialSession?.generalNotes ?? '')
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null)
   const [submittedComments, setSubmittedComments] = useState<CodeComment[]>([])
   const [submittedNotes, setSubmittedNotes] = useState('')
@@ -36,7 +53,25 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
   const [reviews, setReviews] = useState(initialReviews)
   const [honorEarned, setHonorEarned] = useState(0)
   const [rankUp, setRankUp] = useState<Rank | null>(null)
-  const reviewStartRef = useRef<number | null>(null)
+  const reviewStartRef = useRef<number | null>(initialSession ? Date.now() : null)
+
+  // Debounced autosave of in-progress annotations/notes to the session row.
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sessionIdRef = useRef<string | null>(initialSession?.id ?? null)
+  sessionIdRef.current = sessionId
+
+  function autosaveProgress(comments: CodeComment[], generalNotes: string) {
+    const id = sessionIdRef.current
+    if (!id) return
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
+    autosaveTimer.current = setTimeout(() => {
+      fetch(`/api/sessions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ annotations: comments, generalNotes }),
+      }).catch(() => {})
+    }, 800)
+  }
 
   async function handleGenerate(lang: Language, dom: Domain, ctx?: string) {
     setLanguage(lang)
@@ -52,10 +87,15 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
       })
       if (!res.ok) {
         const data = await res.json()
+        if (res.status === 402) {
+          throw new Error('No credits remaining. Please purchase more to continue.')
+        }
         throw new Error(data.error ?? `Error ${res.status}`)
       }
-      const code = await res.json() as GeneratedCode
-      setGenerated(code)
+      const data = await res.json() as GenerateResponse
+      setGenerated({ code: data.code, scenario: data.scenario, issues: data.issues, language: data.language })
+      setSessionId(data.sessionId)
+      setCredits(data.creditsRemaining)   // a credit is spent at generation now
       setSubmittedComments([])
       setSubmittedNotes('')
       setEvaluation(null)
@@ -68,7 +108,8 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
   }
 
   async function handleSubmitReview(comments: CodeComment[], generalNotes: string) {
-    if (!generated) return
+    if (!generated || !sessionId) return
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
     setSubmittedComments(comments)
     setSubmittedNotes(generalNotes)
     setError(null)
@@ -78,7 +119,7 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          generated,
+          sessionId,
           comments,
           generalNotes,
           durationSeconds: reviewStartRef.current
@@ -103,6 +144,7 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
       setReviews((r) => r + 1)
       setHonorEarned(result.score)
       setRankUp(newRank.kyu !== prevRank.kyu ? newRank : null)
+      setSessionId(null)   // session is now completed
       setPhase('feedback')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
@@ -117,6 +159,7 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
   function handleReset() {
     setPhase('setup')
     setGenerated(null)
+    setSessionId(null)
     setSubmittedComments([])
     setSubmittedNotes('')
     setEvaluation(null)
@@ -300,9 +343,13 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews }
 
           {(phase === 'reviewing' || isEvaluating) && generated && (
             <CodeReviewSession
+              key={sessionId ?? 'none'}
               generated={generated}
               onSubmit={handleSubmitReview}
               loading={isEvaluating}
+              initialComments={sessionId === initialSession?.id ? resumeComments : []}
+              initialNotes={sessionId === initialSession?.id ? resumeNotes : ''}
+              onProgress={autosaveProgress}
             />
           )}
 

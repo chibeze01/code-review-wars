@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { Language, Domain, GeneratedCode } from '@/types'
+import type { Language, Domain, GeneratedCode, GenerateResponse, CodeIssue } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +68,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Custom domain requires a context description' }, { status: 400 })
   }
 
+  // Fail fast before spending an Anthropic call if the user is out of credits.
+  // The atomic deduction below is still the source of truth (handles races).
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('credits')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || profile.credits < 1) {
+    return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
+  }
+
+  // Both the snippet-bank hit and a fresh generation produce this payload; the
+  // shared tail then deducts a credit and opens the session row.
+  let payload: { code: string; scenario: string; issues: CodeIssue[] } | null = null
+
   // Check the snippet bank for standard domains
   if (domain !== 'custom') {
     const { data: seenRows } = await supabase
@@ -99,24 +115,20 @@ export async function POST(request: NextRequest) {
         { onConflict: 'user_id,snippet_id', ignoreDuplicates: true }
       )
 
-      return NextResponse.json({
-        code: snippet.code,
-        scenario: snippet.scenario,
-        issues: snippet.issues,
-        language,
-      } satisfies GeneratedCode)
+      payload = { code: snippet.code, scenario: snippet.scenario, issues: snippet.issues }
     }
   }
 
   // Bank miss or custom domain — generate with Haiku
-  const effectiveContext = domain !== 'custom' ? DOMAIN_CONTEXTS[domain] : context!
+  if (!payload) {
+    const effectiveContext = domain !== 'custom' ? DOMAIN_CONTEXTS[domain] : context!
 
-  const system = `You are a code generation assistant for a code review practice application used in job interview prep.
+    const system = `You are a code generation assistant for a code review practice application used in job interview prep.
 Your job is to write realistic, plausible-looking ${language} code that contains intentional hidden issues.
 The candidate must find these issues. Do NOT hint at the issues in comments or variable names — make the code look professional.
 Always respond with valid JSON only, no markdown fences.`
 
-  const userMsg = `Generate a ${language} code snippet for this context:
+    const userMsg = `Generate a ${language} code snippet for this context:
 "${effectiveContext}"
 
 Requirements:
@@ -143,31 +155,69 @@ Return this exact JSON structure:
   ]
 }`
 
-  try {
-    const raw = await callClaude(system, userMsg)
-    const parsed = JSON.parse(extractJson(raw)) as Omit<GeneratedCode, 'language'>
+    try {
+      const raw = await callClaude(system, userMsg)
+      const parsed = JSON.parse(extractJson(raw)) as Omit<GeneratedCode, 'language'>
 
-    // Store in bank so future users skip the generation cost
-    if (domain !== 'custom') {
-      const { data: newSnippet } = await supabase
-        .from('code_snippets')
-        .insert({ language, domain, scenario: parsed.scenario, code: parsed.code, issues: parsed.issues })
-        .select('id')
-        .single()
+      // Store in bank so future users skip the generation cost
+      if (domain !== 'custom') {
+        const { data: newSnippet } = await supabase
+          .from('code_snippets')
+          .insert({ language, domain, scenario: parsed.scenario, code: parsed.code, issues: parsed.issues })
+          .select('id')
+          .single()
 
-      if (newSnippet) {
-        await supabase.from('user_seen_snippets').upsert(
-          { user_id: user.id, snippet_id: newSnippet.id },
-          { onConflict: 'user_id,snippet_id', ignoreDuplicates: true }
-        )
+        if (newSnippet) {
+          await supabase.from('user_seen_snippets').upsert(
+            { user_id: user.id, snippet_id: newSnippet.id },
+            { onConflict: 'user_id,snippet_id', ignoreDuplicates: true }
+          )
+        }
       }
-    }
 
-    return NextResponse.json({ ...parsed, language } satisfies GeneratedCode)
-  } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : 'Generation failed' },
-      { status: 500 }
-    )
+      payload = { code: parsed.code, scenario: parsed.scenario, issues: parsed.issues }
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : 'Generation failed' },
+        { status: 500 }
+      )
+    }
   }
+
+  // Start the session: deduct one credit (atomic; raises if the balance hit 0
+  // in a race) and open the in-progress row. We only reach here once the code
+  // exists, so a failed generation never costs a credit.
+  const { data: creditsRemaining, error: deductError } = await supabase.rpc(
+    'start_session_deduct',
+    { p_user_id: user.id },
+  )
+
+  if (deductError) {
+    return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
+  }
+
+  const { data: sessionRow } = await supabase
+    .from('review_sessions')
+    .insert({
+      user_id: user.id,
+      status: 'in_progress',
+      scenario: payload.scenario,
+      language,
+      code: payload.code,
+      domain,
+      issues: payload.issues,
+      annotations: [],
+      credits_used: 1,
+    })
+    .select('id')
+    .single()
+
+  return NextResponse.json({
+    code: payload.code,
+    scenario: payload.scenario,
+    issues: payload.issues,
+    language,
+    sessionId: sessionRow?.id,
+    creditsRemaining: creditsRemaining ?? Math.max(0, profile.credits - 1),
+  } satisfies GenerateResponse)
 }
