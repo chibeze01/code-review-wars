@@ -41,7 +41,7 @@ export default function SignupPage() {
           <p className="text-sm text-ink-2 mt-2 leading-relaxed">
             We sent a confirmation link to{' '}
             <span className="font-bold text-ink">{email}</span>.{' '}
-            Click it to activate your account and get your 5 free credits.
+            Click it to activate your account and get your 3 free credits.
           </p>
         </div>
       </div>
@@ -58,7 +58,7 @@ export default function SignupPage() {
             </span>
           </Link>
           <h1 className="font-display font-extrabold text-2xl">Start for free</h1>
-          <p className="text-sm text-ink-2 mt-1">Get 5 free credits on sign up — no card required</p>
+          <p className="text-sm text-ink-2 mt-1">Get 3 free credits on sign up — no card required</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card-pop p-6 flex flex-col gap-4">
@@ -91,7 +91,7 @@ export default function SignupPage() {
             />
           </div>
           <button type="submit" disabled={loading} className="btn-pop btn-pop-green w-full mt-1">
-            {loading ? 'Creating account…' : '⚡ Create account — 5 free credits'}
+            {loading ? 'Creating account…' : '⚡ Create account — 3 free credits'}
           </button>
         </form>
 
