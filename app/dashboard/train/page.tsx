@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from '@/components/DashboardClient'
+import { SmallScreenNotice } from '@/components/SmallScreenNotice'
 import type { InProgressSession } from '@/types'
 
 const RESUME_COLS = 'id, code, scenario, language, issues, domain, context, annotations, general_notes'
@@ -53,13 +54,20 @@ export default async function TrainPage({
     : null
 
   return (
-    <DashboardClient
-      userId={user.id}
-      userEmail={user.email!}
-      initialCredits={profile?.credits ?? 0}
-      initialHonor={honor}
-      initialReviews={scores.length}
-      initialSession={initialSession}
-    />
+    <>
+      {/* Phones can't fit the editor + annotation panel; show guidance instead. */}
+      <SmallScreenNotice />
+
+      <div className="hidden md:block">
+        <DashboardClient
+          userId={user.id}
+          userEmail={user.email!}
+          initialCredits={profile?.credits ?? 0}
+          initialHonor={honor}
+          initialReviews={scores.length}
+          initialSession={initialSession}
+        />
+      </div>
+    </>
   )
 }
