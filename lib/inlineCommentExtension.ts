@@ -22,7 +22,13 @@ export class InlineWidget extends WidgetType {
 
   ignoreEvent() { return true }
 
-  updateDOM() { return true }
+  // Each widget owns its own `this.dom` (the React portal target), so a different
+  // widget instance can never adopt another's node. Returning true here would tell
+  // CodeMirror "I updated the existing DOM in place" — leaving the *old* widget's
+  // node mounted and orphaning this widget's node (with the portal'd content). That
+  // is exactly what made a freshly-saved comment invisible until a scroll forced a
+  // full redraw. Return false so CodeMirror always re-mounts via toDOM() → this.dom.
+  updateDOM() { return false }
 }
 
 export const setDecorationsEffect = StateEffect.define<DecorationSet>()
