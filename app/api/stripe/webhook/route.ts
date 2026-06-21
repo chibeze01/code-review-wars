@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { sendPurchaseConfirmation } from '@/lib/email/sendPurchaseConfirmation'
 
 export const dynamic = 'force-dynamic'
+
+const PACK_LABELS: Record<string, string> = {
+  starter: 'Starter pack',
+  standard: 'Standard pack',
+  pro: 'Pro pack',
+}
+
+function formatAmount(amount: number | null, currency: string | null): string {
+  if (amount == null) return ''
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: (currency ?? 'usd').toUpperCase(),
+    }).format(amount / 100)
+  } catch {
+    return `${(amount / 100).toFixed(2)} ${(currency ?? '').toUpperCase()}`
+  }
+}
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!)
@@ -50,7 +69,7 @@ export async function POST(request: NextRequest) {
       ? session.payment_intent
       : session.id
 
-    const { error } = await supabase.rpc('add_credits_for_payment', {
+    const { data: granted, error } = await supabase.rpc('add_credits_for_payment', {
       p_user_id: userId,
       p_amount: creditsToAdd,
       p_payment_id: paymentId,
@@ -60,6 +79,33 @@ export async function POST(request: NextRequest) {
     // Return non-2xx so Stripe retries instead of silently dropping the credit.
     if (error) {
       return NextResponse.json({ error: 'Failed to grant credits' }, { status: 500 })
+    }
+
+    // Send the confirmation only when credits were *newly* granted — a retried or
+    // replayed delivery returns false, so the customer never gets a duplicate email.
+    // Email is best-effort: it must not gate the 200 (credits are already applied).
+    if (granted === true) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('credits, email')
+          .eq('id', userId)
+          .single()
+
+        const recipient = session.customer_details?.email ?? profile?.email ?? null
+        if (recipient) {
+          await sendPurchaseConfirmation({
+            to: recipient,
+            name: session.customer_details?.name,
+            packName: PACK_LABELS[session.metadata?.pack ?? ''] ?? 'Credit pack',
+            credits: creditsToAdd,
+            amountFormatted: formatAmount(session.amount_total, session.currency),
+            newBalance: profile?.credits ?? creditsToAdd,
+          })
+        }
+      } catch (e) {
+        console.error('[webhook] post-grant email step failed:', e)
+      }
     }
   }
 

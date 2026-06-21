@@ -20,12 +20,14 @@
     "@supabase/supabase-js": "^2.49.0",
     "@uiw/react-codemirror": "^4.25.10",
     "next": "^15.3.2",
+    "nodemailer": "^9.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^17.7.0"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10",
