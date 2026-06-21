@@ -43,17 +43,24 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
     const creditsToAdd = parseInt(credits, 10)
 
-    await supabase.rpc('add_credits', { p_user_id: userId, p_amount: creditsToAdd })
+    // Stable, always-present idempotency key: a retried/replayed delivery of the
+    // same payment must not double-grant credits. add_credits_for_payment inserts
+    // the ledger row and increments the balance atomically, skipping duplicates.
+    const paymentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.id
 
-    await supabase.from('credit_transactions').insert({
-      user_id: userId,
-      amount: creditsToAdd,
-      type: 'purchase',
-      description: `Purchased ${creditsToAdd} credits`,
-      stripe_payment_id: typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : null,
+    const { error } = await supabase.rpc('add_credits_for_payment', {
+      p_user_id: userId,
+      p_amount: creditsToAdd,
+      p_payment_id: paymentId,
+      p_description: `Purchased ${creditsToAdd} credits`,
     })
+
+    // Return non-2xx so Stripe retries instead of silently dropping the credit.
+    if (error) {
+      return NextResponse.json({ error: 'Failed to grant credits' }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ received: true })
