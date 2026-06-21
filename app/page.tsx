@@ -208,13 +208,14 @@ function Countdown() {
   return <span className="font-mono">{h}:{m}:{s}</span>
 }
 
-function Logo({ light = false }: { light?: boolean }) {
+function Logo({ light = false, responsive = false }: { light?: boolean; responsive?: boolean }) {
   return (
     <Link href="/" className={`flex items-center gap-2 font-display font-extrabold text-lg ${light ? 'text-white' : 'text-ink'}`}>
       <span className="w-[34px] h-[34px] border-2.5 border-ink rounded-[9px] bg-brand text-white grid place-items-center text-lg shadow-hard-sm">
         ⚔️
       </span>
-      Code Review Wars
+      {/* Drop the wordmark on phones so the auth actions always fit. */}
+      <span className={responsive ? 'hidden sm:inline' : ''}>Code Review Wars</span>
     </Link>
   )
 }
@@ -308,7 +309,7 @@ export default function LandingPage() {
       {/* ── Sticky nav ── */}
       <nav className="sticky top-0 z-50 bg-cream border-b-2.5 border-ink">
         <div className={`${WRAP} flex items-center gap-4 h-16`}>
-          <Logo />
+          <Logo responsive />
           <div className="flex gap-1 ml-2.5 max-[900px]:hidden">
             {[
               ['#how', 'How it works'],
@@ -342,8 +343,10 @@ export default function LandingPage() {
         <div className={`${WRAP} grid grid-cols-[1.05fr_0.95fr] max-[900px]:grid-cols-1 gap-12 items-center`}>
           <div>
             <div className="tag-pop mb-[22px]">🏆 #1 way to prep for the code review round</div>
-            <h1 className="font-display font-extrabold leading-[1.04] text-[clamp(38px,5.3vw,62px)]">
-              Become the dev who catches the bug <span className="mark-hi">everyone else merged.</span>
+            <h1 className="font-display font-extrabold leading-[1.04] text-[clamp(26px,7vw,62px)]">
+              Become the dev who catches the bug{' '}
+              <br className="block sm:hidden" />
+              <span className="mark-hi">everyone else merged.</span>
             </h1>
             <p className="text-xl text-ink-2 leading-[1.6] mt-[22px] max-w-[520px]">
               Code Review Wars throws <b>real, messy production code</b> at you — with nasty bugs hidden
@@ -391,11 +394,11 @@ export default function LandingPage() {
       <div className="bg-cream-2 border-y-2.5 border-ink py-6">
         <div className={`${WRAP} flex items-center justify-center gap-[38px] flex-wrap font-display font-bold text-[15px] text-ink-2`}>
           <div><span className="text-[26px] text-ink">2 languages</span> · 7 domains</div>
-          <div>•</div>
+          <div className="hidden sm:block">•</div>
           <div><span className="text-[26px] text-ink">4–6</span> bugs per challenge</div>
-          <div>•</div>
+          <div className="hidden sm:block">•</div>
           <div><span className="text-[26px] text-ink">9 ranks</span> to climb</div>
-          <div>•</div>
+          <div className="hidden sm:block">•</div>
           <div><span className="text-[26px] text-ink">5 free</span> sessions to start</div>
         </div>
       </div>
