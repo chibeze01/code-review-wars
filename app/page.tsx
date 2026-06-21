@@ -191,7 +191,7 @@ const FAQS = [
   },
   {
     q: 'Will this actually help me pass interviews?',
-    a: "That's the whole point. Reading and reviewing code is the one thing you do every single day at work — and the round almost nobody preps for. Five free sessions means there's zero risk in finding out.",
+    a: "That's the whole point. Reading and reviewing code is the one thing you do every single day at work — and the round almost nobody preps for. Three free sessions means there's zero risk in finding out.",
     open: false,
   },
 ]
@@ -361,7 +361,7 @@ export default function LandingPage() {
               </a>
             </div>
             <p className="text-[13.5px] text-ink-2 font-medium mt-3.5">
-              ✅ 5 free reviews &nbsp;•&nbsp; no credit card &nbsp;•&nbsp; one-time pricing, no subscription
+              ✅ 3 free reviews &nbsp;•&nbsp; no credit card &nbsp;•&nbsp; one-time pricing, no subscription
             </p>
             <div className="flex items-center gap-3.5 mt-[26px] flex-wrap">
               <div className="flex">
@@ -399,7 +399,7 @@ export default function LandingPage() {
           <div className="hidden sm:block">•</div>
           <div><span className="text-[26px] text-ink">9 ranks</span> to climb</div>
           <div className="hidden sm:block">•</div>
-          <div><span className="text-[26px] text-ink">5 free</span> sessions to start</div>
+          <div><span className="text-[26px] text-ink">3 free</span> sessions to start</div>
         </div>
       </div>
 
@@ -539,7 +539,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="inline-flex items-center gap-2 mt-[30px] font-semibold text-[14.5px] px-[18px] py-[11px] border-2.5 border-ink rounded-full bg-brand-soft shadow-hard-sm">
-            ✅ Start with 5 free sessions — no card required.
+            ✅ Start with 3 free sessions — no card required.
           </div>
         </div>
       </section>
@@ -600,7 +600,7 @@ export default function LandingPage() {
             Your next interview has a<br />code review round.
           </h2>
           <p className="text-[19px] text-[#eafff0] leading-[1.6] max-w-[520px] mx-auto mt-[18px]">
-            Walk in having reviewed a hundred bugs. Start free — five reviews on the house, no card.
+            Walk in having reviewed a hundred bugs. Start free — three reviews on the house, no card.
           </p>
           <div className="mt-8 flex gap-3.5 justify-center flex-wrap">
             <Link href="/signup" className="btn-pop btn-pop-yellow btn-pop-lg">

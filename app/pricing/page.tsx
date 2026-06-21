@@ -36,7 +36,7 @@ export default function PricingPage() {
         </h1>
         <p className="text-ink-2 mb-2">1 credit = 1 full practice session (code generation + AI evaluation)</p>
         <p className="text-sm text-brand font-bold mb-12">
-          Every new account gets 5 free credits — no credit card required
+          Every new account gets 3 free credits — no credit card required
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16 items-start text-left">
