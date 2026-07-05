@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Bricolage_Grotesque, Inter, JetBrains_Mono } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 
 const display = Bricolage_Grotesque({
@@ -48,7 +50,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           attributes like cz-shortcut-listen onto <body> before React hydrates.
           This suppresses only the body element's own attribute mismatch — it
           does not affect hydration checks for any children. */}
-      <body className="font-sans" suppressHydrationWarning>{children}</body>
+      <body className="font-sans" suppressHydrationWarning>
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   )
 }
