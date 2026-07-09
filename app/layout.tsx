@@ -23,9 +23,9 @@ const mono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Code Review Wars — get dangerous in the review round',
+  title: 'Code Review Wars: Practice Code Review Interviews on Real Code',
   description:
-    'Real, messy production code with nasty bugs hidden inside — graded like a staff engineer. Get sharp. Get hired.',
+    'Sharpen your code review skills on realistic production code with hidden bugs. Instant AI grading shows you what you missed. Start free, no credit card.',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

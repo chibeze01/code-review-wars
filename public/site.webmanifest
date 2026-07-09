@@ -1,7 +1,7 @@
 {
   "name": "Code Review Wars",
   "short_name": "CRW",
-  "description": "AI-graded code review practice — get dangerous in the review round.",
+  "description": "Practice code review on realistic production code with instant AI grading.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fffaf0",
