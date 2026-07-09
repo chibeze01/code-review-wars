@@ -28,7 +28,9 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const path = request.nextUrl.pathname
-  const isProtected = path.startsWith('/dashboard') || path.startsWith('/billing')
+  const isProtected =
+    (path.startsWith('/dashboard') || path.startsWith('/billing')) &&
+    !path.endsWith('/opengraph-image')
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone()

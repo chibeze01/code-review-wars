@@ -33,6 +33,29 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   manifest: '/site.webmanifest',
+  openGraph: {
+    type: 'website',
+    url: process.env.NEXT_PUBLIC_APP_URL,
+    siteName: 'Code Review Wars',
+    title: 'Code Review Wars — get dangerous in the review round',
+    description:
+      'Real, messy production code with nasty bugs hidden inside — graded like a staff engineer. Get sharp. Get hired.',
+    images: [
+      {
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: 'Code Review Wars — catch the bugs everyone else merged',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Code Review Wars — get dangerous in the review round',
+    description:
+      'Real, messy production code with nasty bugs hidden inside — graded like a staff engineer. Get sharp. Get hired.',
+    images: [`${process.env.NEXT_PUBLIC_APP_URL}/opengraph-image`],
+  },
 }
 
 // themeColor lives in the viewport export in the Next.js App Router (it is not
