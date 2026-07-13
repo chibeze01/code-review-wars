@@ -19,6 +19,9 @@ on:
 jobs:
   push-config:
     runs-on: ubuntu-latest
+    # SUPABASE_ACCESS_TOKEN is an environment secret on Production; the job
+    # must declare the environment to read it.
+    environment: Production
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: noeqryezqfeefcswtgqb
