@@ -1,0 +1,36 @@
+name: Deploy Supabase config
+
+# Pushes supabase/config.toml (auth settings + email templates) to the hosted
+# project whenever config changes land on master. Requires the repo secret
+# SUPABASE_ACCESS_TOKEN (create at https://supabase.com/dashboard/account/tokens).
+#
+# NOTE: `supabase config push` applies local-dev defaults for any auth key NOT
+# declared in config.toml. Keep production values declared explicitly there —
+# see "Gotchas" in CLAUDE.md.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'supabase/config.toml'
+      - 'supabase/templates/**'
+  workflow_dispatch:
+
+jobs:
+  push-config:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: noeqryezqfeefcswtgqb
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Push config
+        run: supabase config push

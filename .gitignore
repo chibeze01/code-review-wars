@@ -25,3 +25,5 @@ Thumbs.db
 node_modules/.vite/
 node_modules/.tmp/
 .vercel
+.env*
+supabase/.temp/
