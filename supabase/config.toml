@@ -1,0 +1,46 @@
+# Supabase hosted-project config for code-review-wars.
+#
+# WARNING: `supabase config push` pushes the ENTIRE auth section — any key not
+# declared here is pushed as the CLI's local-dev default, which can overwrite
+# production settings. Always declare production values explicitly and review
+# the diff before confirming a push.
+project_id = "code-review-wars"
+
+[auth]
+site_url = "https://codereviewwars.dev/"
+additional_redirect_urls = ["http://localhost:3000", "http://localhost:3000/"]
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email.template.confirmation]
+subject = "Confirm your email ⚔️ Code Review Wars"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.invite]
+subject = "You've been invited to Code Review Wars ⚔️"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.magic_link]
+subject = "Your sign-in link — Code Review Wars"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email — Code Review Wars"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.recovery]
+subject = "Reset your password — Code Review Wars"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.reauthentication]
+subject = "Your verification code — Code Review Wars"
+content_path = "./supabase/templates/reauthentication.html"
