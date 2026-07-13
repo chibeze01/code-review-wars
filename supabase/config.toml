@@ -6,6 +6,11 @@
 # the diff before confirming a push.
 project_id = "code-review-wars"
 
+# Vector buckets need a paid tier; remote has this disabled. Declaring it
+# prevents config push from trying (and failing with 402) to enable it.
+[storage.vector]
+enabled = false
+
 [auth]
 site_url = "https://codereviewwars.dev/"
 additional_redirect_urls = ["http://localhost:3000", "http://localhost:3000/"]
