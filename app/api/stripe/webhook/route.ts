@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { sendPurchaseConfirmation } from '@/lib/email/sendPurchaseConfirmation'
@@ -83,29 +83,32 @@ export async function POST(request: NextRequest) {
 
     // Send the confirmation only when credits were *newly* granted — a retried or
     // replayed delivery returns false, so the customer never gets a duplicate email.
-    // Email is best-effort: it must not gate the 200 (credits are already applied).
+    // Email runs via after() so a slow SMTP provider can't hold the Stripe ack open
+    // past its timeout — the 200 goes out as soon as credits are applied.
     if (granted === true) {
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('credits, email')
-          .eq('id', userId)
-          .single()
+      after(async () => {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('credits, email')
+            .eq('id', userId)
+            .single()
 
-        const recipient = session.customer_details?.email ?? profile?.email ?? null
-        if (recipient) {
-          await sendPurchaseConfirmation({
-            to: recipient,
-            name: session.customer_details?.name,
-            packName: PACK_LABELS[session.metadata?.pack ?? ''] ?? 'Credit pack',
-            credits: creditsToAdd,
-            amountFormatted: formatAmount(session.amount_total, session.currency),
-            newBalance: profile?.credits ?? creditsToAdd,
-          })
+          const recipient = session.customer_details?.email ?? profile?.email ?? null
+          if (recipient) {
+            await sendPurchaseConfirmation({
+              to: recipient,
+              name: session.customer_details?.name,
+              packName: PACK_LABELS[session.metadata?.pack ?? ''] ?? 'Credit pack',
+              credits: creditsToAdd,
+              amountFormatted: formatAmount(session.amount_total, session.currency),
+              newBalance: profile?.credits ?? creditsToAdd,
+            })
+          }
+        } catch (e) {
+          console.error('[webhook] post-grant email step failed:', e)
         }
-      } catch (e) {
-        console.error('[webhook] post-grant email step failed:', e)
-      }
+      })
     }
   }
 

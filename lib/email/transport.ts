@@ -24,6 +24,11 @@ export function getTransport(): Transporter | null {
     // 465 = implicit TLS; 587 = STARTTLS upgrade.
     secure: port === 465,
     auth: { user, pass },
+    // Bound every phase so a dead SMTP host fails fast instead of hanging the
+    // serverless function until the platform kills it.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   })
   return cached
 }
