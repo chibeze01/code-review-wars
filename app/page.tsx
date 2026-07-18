@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -196,18 +195,6 @@ const FAQS = [
   },
 ]
 
-function Countdown() {
-  const [secs, setSecs] = useState(72 * 3600)
-  useEffect(() => {
-    const id = setInterval(() => setSecs((s) => (s > 0 ? s - 1 : 72 * 3600)), 1000)
-    return () => clearInterval(id)
-  }, [])
-  const h = String(Math.floor(secs / 3600)).padStart(2, '0')
-  const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0')
-  const s = String(secs % 60).padStart(2, '0')
-  return <span className="font-mono">{h}:{m}:{s}</span>
-}
-
 function Logo({ light = false, responsive = false }: { light?: boolean; responsive?: boolean }) {
   return (
     <Link href="/" className={`flex items-center gap-2 font-display font-extrabold text-lg ${light ? 'text-white' : 'text-ink'}`}>
@@ -301,11 +288,6 @@ function HeroMock() {
 export default function LandingPage() {
   return (
     <div className="bg-cream text-ink">
-      {/* ── Top banner ── */}
-      <div className="bg-ink text-white text-center text-[13.5px] font-semibold py-[9px] px-4 font-display">
-        🎉 Launch week — <b className="text-hi">50% OFF</b> every credit pack. Ends in <Countdown />
-      </div>
-
       {/* ── Sticky nav ── */}
       <nav className="sticky top-0 z-50 bg-cream border-b-2.5 border-ink">
         <div className={`${WRAP} flex items-center gap-4 h-16`}>
