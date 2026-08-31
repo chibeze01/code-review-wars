@@ -4,7 +4,11 @@ import { DashboardClient } from '@/components/DashboardClient'
 import { SmallScreenNotice } from '@/components/SmallScreenNotice'
 import type { InProgressSession } from '@/types'
 
-const RESUME_COLS = 'id, code, scenario, language, issues, domain, context, annotations, general_notes'
+const RESUME_COLS = 'id, code, scenario, language, issues, domain, context, annotations, general_notes, created_at'
+
+// Each row carries its full code snippet, so cap how many we ship to the client.
+// Anything older stays reachable from the history page.
+const MAX_OPEN_SESSIONS = 5
 
 export default async function TrainPage({
   searchParams,
@@ -18,8 +22,9 @@ export default async function TrainPage({
 
   const { resume } = await searchParams
 
-  // The session to drop back into: a specific one (?resume=id) or, by default,
-  // the most recent unfinished session.
+  // What to offer back: one specific session (?resume=id) or every unfinished
+  // one, newest first, so the prompt can list them. Only the explicit ?resume
+  // form skips the prompt.
   let resumeQuery = supabase
     .from('review_sessions')
     .select(RESUME_COLS)
@@ -27,7 +32,7 @@ export default async function TrainPage({
     .eq('status', 'in_progress')
   resumeQuery = resume
     ? resumeQuery.eq('id', resume).limit(1)
-    : resumeQuery.order('created_at', { ascending: false }).limit(1)
+    : resumeQuery.order('created_at', { ascending: false }).limit(MAX_OPEN_SESSIONS)
 
   const [{ data: profile }, { data: completed }, { data: inProgress }] = await Promise.all([
     supabase.from('profiles').select('credits').eq('id', user.id).single(),
@@ -38,20 +43,20 @@ export default async function TrainPage({
   const scores = (completed ?? []).map((s) => s.score ?? 0)
   const honor = scores.reduce((sum, s) => sum + s, 0)
 
-  const row = inProgress?.[0]
-  const initialSession: InProgressSession | null = row && row.code
-    ? {
-        id: row.id,
-        code: row.code,
-        scenario: row.scenario ?? '',
-        language: row.language as InProgressSession['language'],
-        issues: (row.issues as InProgressSession['issues']) ?? [],
-        domain: (row.domain as InProgressSession['domain']) ?? 'general',
-        context: row.context ?? null,
-        annotations: (row.annotations as InProgressSession['annotations']) ?? [],
-        generalNotes: row.general_notes ?? '',
-      }
-    : null
+  const openSessions: InProgressSession[] = (inProgress ?? [])
+    .filter((row) => Boolean(row.code))
+    .map((row) => ({
+      id: row.id,
+      code: row.code!,
+      scenario: row.scenario ?? '',
+      language: row.language as InProgressSession['language'],
+      issues: (row.issues as InProgressSession['issues']) ?? [],
+      domain: (row.domain as InProgressSession['domain']) ?? 'general',
+      context: row.context ?? null,
+      annotations: (row.annotations as InProgressSession['annotations']) ?? [],
+      generalNotes: row.general_notes ?? '',
+      createdAt: row.created_at,
+    }))
 
   return (
     <>
@@ -65,7 +70,8 @@ export default async function TrainPage({
           initialCredits={profile?.credits ?? 0}
           initialHonor={honor}
           initialReviews={scores.length}
-          initialSession={initialSession}
+          openSessions={openSessions}
+          autoResume={Boolean(resume)}
         />
       </div>
     </>

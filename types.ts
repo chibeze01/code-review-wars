@@ -39,6 +39,8 @@ export interface InProgressSession {
   context: string | null
   annotations: CodeComment[]
   generalNotes: string
+  // When the session was started — shown in the resume prompt.
+  createdAt: string
 }
 
 // Structured per-issue outcome — powers the category performance charts
