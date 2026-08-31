@@ -38,6 +38,16 @@ export async function POST(request: NextRequest) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/billing?success=true`,
     cancel_url: `${appUrl}/billing?canceled=true`,
+    // Prefill the email (and guarantee we have it for the receipt) + add reassuring
+    // copy and a clear statement description on the Checkout screen.
+    customer_email: user.email,
+    submit_type: 'pay',
+    custom_text: {
+      submit: { message: 'Credits are added to your account instantly after payment.' },
+    },
+    payment_intent_data: {
+      description: `${credits} Code Review Wars credits — ${pack} pack`,
+    },
     metadata: {
       userId: user.id,
       credits: credits.toString(),
