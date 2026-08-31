@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { CodeReviewSession } from './CodeReviewSession'
 import { FeedbackPanel } from './FeedbackPanel'
 import { TrainSidebar } from './TrainSidebar'
+import { ResumeSessionPrompt } from './ResumeSessionPrompt'
 import { AppNav } from './AppNav'
 import { getRankProgress, type Rank } from '@/lib/ranks'
 import type {
@@ -18,34 +19,46 @@ interface Props {
   initialCredits: number
   initialHonor: number
   initialReviews: number
-  // An unfinished session to drop straight back into (page reload / resume).
-  initialSession?: InProgressSession | null
+  // Every unfinished session the user can pick back up, newest first.
+  openSessions?: InProgressSession[]
+  // True when the user asked for one exact session (?resume=id, e.g. from
+  // history) — that's explicit intent, so skip the resume prompt.
+  autoResume?: boolean
 }
 
-export function DashboardClient({ initialCredits, initialHonor, initialReviews, initialSession }: Props) {
-  const [phase, setPhase] = useState<AppPhase>(initialSession ? 'reviewing' : 'setup')
+export function DashboardClient({
+  initialCredits, initialHonor, initialReviews, openSessions = [], autoResume = false,
+}: Props) {
+  // Landing on /dashboard/train with unfinished work asks first; only an
+  // explicit ?resume=id drops straight back in.
+  const resumeOnLoad = autoResume && openSessions.length > 0
+  const firstSession = resumeOnLoad ? openSessions[0] : null
+
+  // The session being reviewed, when it came from a resume rather than a fresh
+  // generation. Its saved annotations/notes seed the editor.
+  const [resumed, setResumed] = useState<InProgressSession | null>(firstSession)
+  const [offers, setOffers] = useState<InProgressSession[]>(resumeOnLoad ? [] : openSessions)
+  const [phase, setPhase] = useState<AppPhase>(resumeOnLoad ? 'reviewing' : 'setup')
   const [error, setError] = useState<string | null>(null)
   const [credits, setCredits] = useState(initialCredits)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-  const [language, setLanguage] = useState<Language>(initialSession?.language ?? 'TypeScript')
-  const [domain, setDomain] = useState<Domain>(initialSession?.domain ?? 'ecommerce')
+  const [language, setLanguage] = useState<Language>(firstSession?.language ?? 'TypeScript')
+  const [domain, setDomain] = useState<Domain>(firstSession?.domain ?? 'ecommerce')
   // Restore the custom prompt so a resumed custom session's "Next challenge" works.
-  const [context, setContext] = useState<string | undefined>(initialSession?.context ?? undefined)
+  const [context, setContext] = useState<string | undefined>(firstSession?.context ?? undefined)
 
   const [generated, setGenerated] = useState<GeneratedCode | null>(
-    initialSession
+    firstSession
       ? {
-          code: initialSession.code,
-          scenario: initialSession.scenario,
-          issues: initialSession.issues,
-          language: initialSession.language,
+          code: firstSession.code,
+          scenario: firstSession.scenario,
+          issues: firstSession.issues,
+          language: firstSession.language,
         }
       : null,
   )
-  const [sessionId, setSessionId] = useState<string | null>(initialSession?.id ?? null)
-  const [resumeComments] = useState<CodeComment[]>(initialSession?.annotations ?? [])
-  const [resumeNotes] = useState<string>(initialSession?.generalNotes ?? '')
+  const [sessionId, setSessionId] = useState<string | null>(firstSession?.id ?? null)
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null)
   const [submittedComments, setSubmittedComments] = useState<CodeComment[]>([])
   const [submittedNotes, setSubmittedNotes] = useState('')
@@ -54,11 +67,11 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
   const [reviews, setReviews] = useState(initialReviews)
   const [honorEarned, setHonorEarned] = useState(0)
   const [rankUp, setRankUp] = useState<Rank | null>(null)
-  const reviewStartRef = useRef<number | null>(initialSession ? Date.now() : null)
+  const reviewStartRef = useRef<number | null>(resumeOnLoad ? Date.now() : null)
 
   // Debounced autosave of in-progress annotations/notes to the session row.
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const sessionIdRef = useRef<string | null>(initialSession?.id ?? null)
+  const sessionIdRef = useRef<string | null>(firstSession?.id ?? null)
   sessionIdRef.current = sessionId
 
   function autosaveProgress(comments: CodeComment[], generalNotes: string) {
@@ -74,11 +87,40 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
     }, 800)
   }
 
+  function handleResumeOffer(session: InProgressSession) {
+    setResumed(session)
+    setGenerated({
+      code: session.code,
+      scenario: session.scenario,
+      issues: session.issues,
+      language: session.language,
+    })
+    setSessionId(session.id)
+    setLanguage(session.language)
+    setDomain(session.domain)
+    setContext(session.context ?? undefined)
+    reviewStartRef.current = Date.now()
+    setOffers([])
+    setPhase('reviewing')
+  }
+
+  // Declining leaves the unfinished sessions alone in the DB — their credits are
+  // already spent, so they stay resumable from history.
+  function handleDeclineOffer() {
+    setOffers([])
+    setResumed(null)
+    setGenerated(null)
+    setSessionId(null)
+    setPhase('setup')
+  }
+
   async function handleGenerate(lang: Language, dom: Domain, ctx?: string) {
     setLanguage(lang)
     setDomain(dom)
     setContext(ctx)
     setError(null)
+    setOffers([])
+    setResumed(null)
     setPhase('generating')
     try {
       const res = await fetch('/api/generate-code', {
@@ -157,8 +199,13 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
     await handleGenerate(language, domain, context)
   }
 
+  // Back to the picker. Any unfinished session is left as-is in the DB — its
+  // credit is already spent, so it stays resumable.
   function handleReset() {
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
     setPhase('setup')
+    setOffers([])
+    setResumed(null)
     setGenerated(null)
     setSessionId(null)
     setSubmittedComments([])
@@ -187,6 +234,7 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
           domain={domain}
           context={context}
           onGenerate={handleGenerate}
+          onNewSession={handleReset}
         />
 
         {/* Only the editor scrolls — the page itself never does. */}
@@ -203,7 +251,17 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
             </div>
           )}
 
-          {(phase === 'setup' || isGenerating) && (
+          {phase === 'setup' && offers.length > 0 && (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <ResumeSessionPrompt
+                sessions={offers}
+                onResume={handleResumeOffer}
+                onStartNew={handleDeclineOffer}
+              />
+            </div>
+          )}
+
+          {((phase === 'setup' && offers.length === 0) || isGenerating) && (
             <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center gap-4">
               {isGenerating ? (
                 <>
@@ -252,8 +310,8 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
                 generated={generated}
                 onSubmit={handleSubmitReview}
                 loading={isEvaluating}
-                initialComments={sessionId === initialSession?.id ? resumeComments : []}
-                initialNotes={sessionId === initialSession?.id ? resumeNotes : ''}
+                initialComments={sessionId === resumed?.id ? resumed.annotations : []}
+                initialNotes={sessionId === resumed?.id ? resumed.generalNotes : ''}
                 onProgress={autosaveProgress}
               />
             </div>
