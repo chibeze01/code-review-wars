@@ -90,6 +90,20 @@ C:\GIT\Mobile-artifact    ← worktree (sibling, not nested)
 
 Never place worktrees under `.claude\worktrees\` or any subdirectory of the main repo.
 
+## Branch workflow
+
+`develop` is the integration branch. Merge ticket/feature branches into
+`develop`, not `master`. Batch-release by merging `develop` → `master` when
+ready to ship — don't merge individual tickets straight to `master`.
+
+- `master` = production. It's the Vercel Production Branch; anything merged
+  there deploys to `codereviewwars.dev` immediately.
+- `develop` = where tickets land first for integration testing before release.
+- Vercel preview deployments are restricted to `develop` only (see
+  `ignoreCommand` in `vercel.json`) — feature/ticket branches don't get preview
+  builds. Review those on the branch/PR diff, verify for real once merged to
+  `develop`.
+
 ## Project Facts
 
 **What it is:** Code Review Wars (codereviewwars.dev) — interview prep for the
