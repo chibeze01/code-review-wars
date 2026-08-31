@@ -234,7 +234,6 @@ const editorTheme = EditorView.theme({
     userSelect: 'none',
     fontFamily: 'var(--font-mono), monospace',
   },
-  '.cm-gutter.cm-lineNumbers .cm-gutterElement:hover': { color: '#16a34a', cursor: 'pointer', fontWeight: '700' },
   '.cm-gutter.cm-lineNumbers .cm-gutterElement': { paddingLeft: '12px', paddingRight: '8px' },
   '.cm-activeLineGutter': { backgroundColor: 'transparent' },
   '.cm-activeLine': { backgroundColor: 'rgba(28,25,23,0.03)' },
@@ -242,6 +241,49 @@ const editorTheme = EditorView.theme({
     backgroundColor: 'rgba(255, 212, 59, 0.45) !important',
   },
   '.cm-cursor': { borderLeftColor: '#1c1917' },
+})
+
+// Annotatable mode only: the gutter becomes a button — hovering a line number
+// reveals a "+" so it's obvious you can add a comment there.
+// The `&.cm-editor` prefix outranks the base theme's own gutter padding rule,
+// which is loaded after this one.
+const gutterAddTheme = EditorView.theme({
+  // The badge straddles the gutter border, so the column must stop clipping.
+  '&.cm-editor .cm-gutter.cm-lineNumbers': { overflow: 'visible' },
+  '&.cm-editor .cm-gutter.cm-lineNumbers .cm-gutterElement': {
+    paddingRight: '14px',
+    position: 'relative',
+  },
+  '&.cm-editor .cm-gutter.cm-lineNumbers .cm-gutterElement:hover': {
+    color: '#16a34a',
+    cursor: 'pointer',
+    fontWeight: '700',
+    backgroundColor: 'rgba(22,163,74,0.10)',
+  },
+  '&.cm-editor .cm-gutter.cm-lineNumbers .cm-gutterElement:hover::after': {
+    content: '"+"',
+    position: 'absolute',
+    right: '-9px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '18px',
+    height: '18px',
+    borderRadius: '6px',
+    border: '2px solid #1c1917',
+    backgroundColor: '#16a34a',
+    boxShadow: '2px 2px 0 #1c1917',
+    color: '#ffffff',
+    fontSize: '13px',
+    fontWeight: '700',
+    lineHeight: '14px',
+    textAlign: 'center',
+  },
+})
+
+// Fill mode: the editor owns the vertical scroll instead of the page.
+const fillTheme = EditorView.theme({
+  '&.cm-editor': { height: '100%' },
+  '.cm-scroller': { overflow: 'auto' },
 })
 
 // Handoff syntax mapping: purple keywords, green strings, muted italic comments
@@ -263,6 +305,9 @@ interface Props {
   readOnly?: boolean
   onCommentsChange?: (comments: CodeComment[]) => void
   initialComments?: CodeComment[]
+  // Stretch to the parent's height and scroll internally, so the page around it
+  // (notes + submit) stays put.
+  fill?: boolean
 }
 
 export function AnnotatedCodeEditor({
@@ -271,6 +316,7 @@ export function AnnotatedCodeEditor({
   readOnly = false,
   onCommentsChange,
   initialComments = [],
+  fill = false,
 }: Props) {
   const viewRef = useRef<EditorViewType | null>(null)
 
@@ -290,6 +336,8 @@ export function AnnotatedCodeEditor({
   // sent earlier is silently dropped.
   const [viewReady, setViewReady] = useState(false)
   const selectionRef = useRef<{ start: number; end: number; text: string } | null>(null)
+  // Floating "add comment" chip anchored under a multi-line text selection.
+  const [selectionChip, setSelectionChip] = useState<{ top: number; left: number } | null>(null)
 
   useEffect(() => {
     onCommentsChange?.(
@@ -317,15 +365,31 @@ export function AnnotatedCodeEditor({
     requestAnimationFrame(() => view.requestMeasure())
   }, [comments, pendingForm, viewReady])
 
+  function openForm(startLine: number, endLine: number, selectedText: string) {
+    setSelectionChip(null)
+    setEditingId(null)
+    setPendingForm({ startLine, endLine, selectedText, widget: new InlineWidget(`form-${Date.now()}`) })
+  }
+
   const openFormRef = useRef<(clickedLine: number) => void>(() => {})
   openFormRef.current = (clickedLine: number) => {
     if (readOnly) return
     if (pendingForm?.endLine === clickedLine) { setPendingForm(null); return }
+    // Only fold the live selection in when the clicked number is part of it —
+    // otherwise a stale selection would silently retarget the new comment.
     const sel = selectionRef.current
-    const startLine = sel ? sel.start : clickedLine
-    const endLine   = sel ? sel.end   : clickedLine
-    const selectedText = sel ? sel.text : ''
-    setPendingForm({ startLine, endLine, selectedText, widget: new InlineWidget(`form-${Date.now()}`) })
+    const inSel = sel && clickedLine >= sel.start && clickedLine <= sel.end
+    openForm(
+      inSel ? sel.start : clickedLine,
+      inSel ? sel.end : clickedLine,
+      inSel ? sel.text : '',
+    )
+  }
+
+  function openFormFromSelection() {
+    const sel = selectionRef.current
+    if (!sel) return
+    openForm(sel.start, sel.end, sel.text)
   }
 
   const lineNumbersExt = useMemo(
@@ -348,7 +412,11 @@ export function AnnotatedCodeEditor({
       EditorView.updateListener.of((update) => {
         if (!update.selectionSet) return
         const sel = update.state.selection.main
-        if (sel.empty) { selectionRef.current = null; return }
+        if (sel.empty) {
+          selectionRef.current = null
+          setSelectionChip(null)
+          return
+        }
         const from = Math.min(sel.from, sel.to)
         const to   = Math.max(sel.from, sel.to)
         const startLine = update.state.doc.lineAt(from).number
@@ -361,8 +429,19 @@ export function AnnotatedCodeEditor({
           end: endLine,
           text: update.state.sliceDoc(from, Math.min(to, from + 400)),
         }
+        if (readOnly) return
+        // Park the chip just under the end of the selection. Coordinates are
+        // scroller-relative so it rides along when the editor scrolls.
+        const coords = update.view.coordsAtPos(to)
+        const scroller = update.view.scrollDOM
+        if (!coords) { setSelectionChip(null); return }
+        const box = scroller.getBoundingClientRect()
+        setSelectionChip({
+          top: coords.bottom - box.top + scroller.scrollTop + 4,
+          left: Math.max(8, coords.left - box.left + scroller.scrollLeft),
+        })
       }),
-    [],
+    [readOnly],
   )
 
   const langExt = useMemo(
@@ -371,8 +450,17 @@ export function AnnotatedCodeEditor({
   )
 
   const extensions = useMemo(
-    () => [langExt, decorationField, lineNumbersExt, selectionExt, editorTheme, syntaxHighlighting(lightSyntax)],
-    [langExt, lineNumbersExt, selectionExt],
+    () => [
+      langExt,
+      decorationField,
+      lineNumbersExt,
+      selectionExt,
+      editorTheme,
+      ...(readOnly ? [] : [gutterAddTheme]),
+      ...(fill ? [fillTheme] : []),
+      syntaxHighlighting(lightSyntax),
+    ],
+    [langExt, lineNumbersExt, selectionExt, readOnly, fill],
   )
 
   function saveComment(text: string) {
@@ -393,6 +481,8 @@ export function AnnotatedCodeEditor({
       },
     ])
     setPendingForm(null)
+    selectionRef.current = null
+    setSelectionChip(null)
   }
 
   function editComment(id: string, text: string) {
@@ -417,8 +507,8 @@ export function AnnotatedCodeEditor({
   const lineCount = code.split('\n').length
 
   return (
-    <div className="relative flex flex-col">
-      <div className="flex items-center justify-between px-3.5 py-2.5 bg-cream-2 border-2.5 border-b-0 border-ink rounded-t-pop">
+    <div className={`relative flex flex-col ${fill ? 'flex-1 min-h-0' : ''}`}>
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-cream-2 border-2.5 border-b-0 border-ink rounded-t-pop shrink-0">
         <div className="flex gap-2">
           <span className="w-3 h-3 rounded-full border-2 border-ink bg-coral" />
           <span className="w-3 h-3 rounded-full border-2 border-ink bg-hi" />
@@ -428,8 +518,8 @@ export function AnnotatedCodeEditor({
         {!readOnly ? (
           <span className="text-xs text-ink-2 font-medium">
             {comments.length > 0
-              ? `${comments.length} annotation${comments.length !== 1 ? 's' : ''} · click line № to add`
-              : 'Click a line number to annotate'}
+              ? `${comments.length} annotation${comments.length !== 1 ? 's' : ''} · + a line number to add`
+              : 'Hover a line number and hit + — or select code'}
           </span>
         ) : (
           <span className="text-xs text-brand font-bold">
@@ -440,27 +530,49 @@ export function AnnotatedCodeEditor({
         )}
       </div>
 
-      <div className="border-2.5 border-ink rounded-b-pop overflow-hidden shadow-hard">
-        <CodeMirror
-          value={code}
-          extensions={extensions}
-          theme="none"
-          editable={false}
-          onCreateEditor={(view) => {
-            viewRef.current = view
-            setViewReady(true)
-          }}
-          basicSetup={{
-            lineNumbers: false,
-            foldGutter: false,
-            dropCursor: false,
-            allowMultipleSelections: false,
-            searchKeymap: false,
-            highlightActiveLine: false,
-            highlightActiveLineGutter: false,
-          }}
-        />
+      <div
+        className={`border-2.5 border-ink rounded-b-pop overflow-hidden shadow-hard ${
+          fill ? 'relative flex-1 min-h-0' : ''
+        }`}
+      >
+        <div className={fill ? 'absolute inset-0' : undefined}>
+          <CodeMirror
+            value={code}
+            className={fill ? 'h-full' : undefined}
+            extensions={extensions}
+            theme="none"
+            editable={false}
+            onCreateEditor={(view) => {
+              viewRef.current = view
+              setViewReady(true)
+            }}
+            basicSetup={{
+              lineNumbers: false,
+              foldGutter: false,
+              dropCursor: false,
+              allowMultipleSelections: false,
+              searchKeymap: false,
+              highlightActiveLine: false,
+              highlightActiveLineGutter: false,
+            }}
+          />
+        </div>
       </div>
+
+      {selectionChip && !readOnly && viewRef.current &&
+        createPortal(
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={openFormFromSelection}
+            style={{ top: selectionChip.top, left: selectionChip.left }}
+            className="absolute z-20 flex items-center gap-1 px-2.5 py-1 rounded-lg border-2 border-ink bg-brand text-white text-[11px] font-display font-bold shadow-hard-sm hover:-translate-x-px hover:-translate-y-px active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all"
+          >
+            <span className="text-[13px] leading-none">+</span>
+            Add comment
+          </button>,
+          viewRef.current.scrollDOM,
+        )}
 
       {comments.map((c) =>
         createPortal(

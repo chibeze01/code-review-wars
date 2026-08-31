@@ -5,7 +5,7 @@ import type { Language, Domain } from '@/types'
 
 const LANGUAGES: Language[] = ['TypeScript', 'C#']
 
-const DOMAINS: { id: Exclude<Domain, 'custom'>; label: string; sub: string }[] = [
+export const DOMAINS: { id: Exclude<Domain, 'custom'>; label: string; sub: string }[] = [
   { id: 'ecommerce',  label: 'E-Commerce',  sub: 'Cart, orders, payments' },
   { id: 'fintech',    label: 'Fintech',      sub: 'Trades, P&L, compliance' },
   { id: 'healthcare', label: 'Healthcare',   sub: 'Records, billing, HIPAA' },
@@ -13,6 +13,11 @@ const DOMAINS: { id: Exclude<Domain, 'custom'>; label: string; sub: string }[] =
   { id: 'saas',       label: 'SaaS',         sub: 'Auth, billing, tenancy' },
   { id: 'general',    label: 'General',      sub: 'REST API, validation, DB' },
 ]
+
+export function domainLabel(domain: Domain): string {
+  if (domain === 'custom') return 'Custom'
+  return DOMAINS.find((d) => d.id === domain)?.label ?? 'General'
+}
 
 interface Props {
   onGenerate: (language: Language, domain: Domain, context?: string) => void
@@ -35,7 +40,7 @@ export function SessionSetupPanel({ onGenerate, loading, credits }: Props) {
   const canSubmit = credits > 0 && !loading && (domain !== 'custom' || context.trim().length > 0)
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
       {/* Language */}
       <div className="flex flex-col gap-1.5">
         <label className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2">
@@ -47,7 +52,7 @@ export function SessionSetupPanel({ onGenerate, loading, credits }: Props) {
               key={lang}
               type="button"
               onClick={() => setLanguage(lang)}
-              className={`flex-1 py-2.5 font-display font-bold text-[13px] border-2.5 border-ink rounded-pop transition-all ${
+              className={`flex-1 py-2 font-display font-bold text-[13px] border-2.5 border-ink rounded-pop transition-all ${
                 language === lang
                   ? 'bg-brand-soft shadow-hard-sm'
                   : 'bg-paper text-ink-2 hover:bg-cream-2'
@@ -115,7 +120,7 @@ export function SessionSetupPanel({ onGenerate, loading, credits }: Props) {
       <button
         type="submit"
         disabled={!canSubmit}
-        className={`btn-pop w-full mt-1 ${credits === 0 ? 'bg-coral-soft' : 'btn-pop-green'}`}
+        className={`btn-pop w-full !py-3 !text-[15px] ${credits === 0 ? 'bg-coral-soft' : 'btn-pop-green'}`}
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
