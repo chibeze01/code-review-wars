@@ -2,10 +2,9 @@
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { SessionSetupPanel } from './SessionSetupPanel'
 import { CodeReviewSession } from './CodeReviewSession'
 import { FeedbackPanel } from './FeedbackPanel'
-import { RankBadge } from './RankBadge'
+import { TrainSidebar } from './TrainSidebar'
 import { AppNav } from './AppNav'
 import { getRankProgress, type Rank } from '@/lib/ranks'
 import type {
@@ -27,6 +26,7 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
   const [phase, setPhase] = useState<AppPhase>(initialSession ? 'reviewing' : 'setup')
   const [error, setError] = useState<string | null>(null)
   const [credits, setCredits] = useState(initialCredits)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const [language, setLanguage] = useState<Language>(initialSession?.language ?? 'TypeScript')
   const [domain, setDomain] = useState<Domain>(initialSession?.domain ?? 'ecommerce')
@@ -175,121 +175,24 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
       <AppNav credits={credits} />
 
       <div className="flex flex-1 overflow-hidden min-h-0">
-        <aside className="w-80 shrink-0 border-r-2.5 border-ink bg-cream-2/60 overflow-y-auto p-5 flex flex-col gap-5">
-          {(() => {
-            const { rank, next, progress, honorToNext } = getRankProgress(honor)
-            return (
-              <div className="card-pop p-4">
-                <div className="flex items-center gap-3">
-                  <RankBadge rank={rank} size="lg" />
-                  <div className="min-w-0">
-                    <p className="font-display font-extrabold text-sm truncate">{rank.title}</p>
-                    <p className="text-xs text-ink-2">
-                      <span className="text-brand font-bold">{honor}</span> honor
-                    </p>
-                  </div>
-                </div>
-                {next && (
-                  <div className="mt-3">
-                    <div className="w-full h-2.5 bg-cream-2 border-2 border-ink rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand transition-all duration-700"
-                        style={{ width: `${Math.round(progress * 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-[11px] text-ink-2 mt-1.5">
-                      {honorToNext} honor to <span style={{ color: next.color }} className="font-bold">{next.label}</span>
-                    </p>
-                  </div>
-                )}
-                <div className="mt-3 pt-3 border-t-2 border-cream-2 grid grid-cols-2 gap-2">
-                  <div>
-                    <p className="font-display font-extrabold text-base leading-none">{reviews}</p>
-                    <p className="text-[10px] font-semibold text-ink-3 mt-1">reviews</p>
-                  </div>
-                  <div>
-                    <p className="font-display font-extrabold text-base leading-none">
-                      {reviews > 0 ? Math.round(honor / reviews) : '—'}
-                    </p>
-                    <p className="text-[10px] font-semibold text-ink-3 mt-1">avg score</p>
-                  </div>
-                </div>
-              </div>
-            )
-          })()}
+        <TrainSidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed((c) => !c)}
+          phase={phase}
+          honor={honor}
+          reviews={reviews}
+          credits={credits}
+          generating={isGenerating}
+          language={language}
+          domain={domain}
+          context={context}
+          onGenerate={handleGenerate}
+        />
 
-          <div>
-            <h2 className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2 mb-3">Session setup</h2>
-            <SessionSetupPanel onGenerate={handleGenerate} loading={isGenerating} credits={credits} />
-          </div>
-
-          {phase !== 'setup' && (
-            <div className="mt-4 border-t-2 border-ink/10 pt-4">
-              <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2 mb-2">Progress</p>
-              <div className="flex flex-col gap-1.5">
-                {(
-                  [
-                    { key: 'generating', label: '1. Generate code' },
-                    { key: 'reviewing',  label: '2. Annotate & review' },
-                    { key: 'evaluating', label: '3. Evaluating' },
-                    { key: 'feedback',   label: '4. See results' },
-                  ] as { key: AppPhase; label: string }[]
-                ).map(({ key, label }) => {
-                  const order: AppPhase[] = ['generating', 'reviewing', 'evaluating', 'feedback']
-                  const isDone   = order.indexOf(key) < order.indexOf(phase)
-                  const isActive = key === phase
-                  return (
-                    <div
-                      key={key}
-                      className={`flex items-center gap-2 text-[13px] py-0.5 font-bold ${
-                        isActive ? 'text-brand' : isDone ? 'text-ink-2' : 'text-ink-3'
-                      }`}
-                    >
-                      <div className={`w-2 h-2 rounded-full shrink-0 border-2 border-ink ${
-                        isActive ? 'bg-brand' : isDone ? 'bg-ink-3' : 'bg-cream-2'
-                      }`} />
-                      {label} {isDone && '✓'}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {phase === 'reviewing' && (
-            <div className="mt-auto bg-hi-soft border-2.5 border-ink rounded-pop p-4">
-              <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] mb-2">💡 How to annotate</p>
-              <ol className="flex flex-col gap-2">
-                {[
-                  'Select any lines in the code editor',
-                  'An annotation form appears inline',
-                  'Type what you think the issue is',
-                  '⌘+Enter or click Save',
-                  'Repeat for every issue you find',
-                  'Add general notes below, then Submit',
-                ].map((step, i) => (
-                  <li key={i} className="text-xs text-ink-2 flex gap-2">
-                    <span className="font-mono font-bold shrink-0">{i + 1}.</span>
-                    {step}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          <div className="mt-auto border-t-2 border-ink/10 pt-4">
-            <Link
-              href="/dashboard/history"
-              className="flex items-center gap-2 text-[13px] font-bold text-ink-2 hover:text-brand transition-colors"
-            >
-              🕐 View review history
-            </Link>
-          </div>
-        </aside>
-
-        <main className="flex-1 overflow-y-auto p-6">
+        {/* Only the editor scrolls — the page itself never does. */}
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col p-5 gap-4">
           {error && (
-            <div className="mb-5 border-2.5 border-ink rounded-pop bg-coral-soft px-4 py-3 text-sm font-medium flex items-start gap-2.5 shadow-hard-sm">
+            <div className="shrink-0 border-2.5 border-ink rounded-pop bg-coral-soft px-4 py-3 text-sm font-medium flex items-start gap-2.5 shadow-hard-sm">
               <span>⚠️</span>
               <span>{error}</span>
               {error.toLowerCase().includes('credit') && (
@@ -301,7 +204,7 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
           )}
 
           {(phase === 'setup' || isGenerating) && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center gap-4">
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center gap-4">
               {isGenerating ? (
                 <>
                   <div className="w-12 h-12 rounded-full border-4 border-ink border-t-brand animate-spin" />
@@ -343,28 +246,32 @@ export function DashboardClient({ initialCredits, initialHonor, initialReviews, 
           )}
 
           {(phase === 'reviewing' || isEvaluating) && generated && (
-            <CodeReviewSession
-              key={sessionId ?? 'none'}
-              generated={generated}
-              onSubmit={handleSubmitReview}
-              loading={isEvaluating}
-              initialComments={sessionId === initialSession?.id ? resumeComments : []}
-              initialNotes={sessionId === initialSession?.id ? resumeNotes : ''}
-              onProgress={autosaveProgress}
-            />
+            <div className="flex-1 min-h-0">
+              <CodeReviewSession
+                key={sessionId ?? 'none'}
+                generated={generated}
+                onSubmit={handleSubmitReview}
+                loading={isEvaluating}
+                initialComments={sessionId === initialSession?.id ? resumeComments : []}
+                initialNotes={sessionId === initialSession?.id ? resumeNotes : ''}
+                onProgress={autosaveProgress}
+              />
+            </div>
           )}
 
           {phase === 'feedback' && evaluation && generated && (
-            <FeedbackPanel
-              result={evaluation}
-              generated={generated}
-              comments={submittedComments}
-              generalNotes={submittedNotes}
-              honorEarned={honorEarned}
-              rankUp={rankUp}
-              onNext={handleNext}
-              onReset={handleReset}
-            />
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+              <FeedbackPanel
+                result={evaluation}
+                generated={generated}
+                comments={submittedComments}
+                generalNotes={submittedNotes}
+                honorEarned={honorEarned}
+                rankUp={rankUp}
+                onNext={handleNext}
+                onReset={handleReset}
+              />
+            </div>
           )}
         </main>
       </div>
