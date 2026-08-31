@@ -574,7 +574,9 @@ export function AnnotatedCodeEditor({
           viewRef.current.scrollDOM,
         )}
 
-      {comments.map((c) =>
+      {/* Portals target widget DOM nodes, which only exist once the view is
+          built on the client — never during SSR. */}
+      {viewReady && comments.map((c) =>
         createPortal(
           editingId === c.id && !readOnly ? (
             <InlineCommentForm
