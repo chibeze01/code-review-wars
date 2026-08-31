@@ -3,13 +3,22 @@ import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemir
 
 export class InlineWidget extends WidgetType {
   readonly id: string
-  readonly dom: HTMLDivElement
+  private node: HTMLDivElement | null = null
 
   constructor(id: string) {
     super()
     this.id = id
-    this.dom = document.createElement('div')
-    this.dom.className = 'cm-inline-widget-host'
+  }
+
+  // Built on first access rather than in the constructor: widgets are created
+  // inside a useState initialiser, which also runs during SSR where there is
+  // no `document`.
+  get dom(): HTMLDivElement {
+    if (!this.node) {
+      this.node = document.createElement('div')
+      this.node.className = 'cm-inline-widget-host'
+    }
+    return this.node
   }
 
   toDOM() { return this.dom }
