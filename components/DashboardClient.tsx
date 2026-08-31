@@ -199,8 +199,13 @@ export function DashboardClient({
     await handleGenerate(language, domain, context)
   }
 
+  // Back to the picker. Any unfinished session is left as-is in the DB — its
+  // credit is already spent, so it stays resumable.
   function handleReset() {
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
     setPhase('setup')
+    setOffers([])
+    setResumed(null)
     setGenerated(null)
     setSessionId(null)
     setSubmittedComments([])
@@ -229,6 +234,7 @@ export function DashboardClient({
           domain={domain}
           context={context}
           onGenerate={handleGenerate}
+          onNewSession={handleReset}
         />
 
         {/* Only the editor scrolls — the page itself never does. */}
