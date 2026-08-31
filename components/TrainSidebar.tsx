@@ -146,6 +146,7 @@ interface Props {
   domain: Domain
   context?: string
   onGenerate: (language: Language, domain: Domain, context?: string) => void
+  onNewSession: () => void
 }
 
 export function TrainSidebar({
@@ -160,6 +161,7 @@ export function TrainSidebar({
   domain,
   context,
   onGenerate,
+  onNewSession,
 }: Props) {
   const { rank, next, progress, honorToNext } = getRankProgress(honor)
   const inSession = phase !== 'setup'
@@ -191,6 +193,17 @@ export function TrainSidebar({
         {inSession && <ProgressTrail phase={phase} compact />}
 
         <div className="mt-auto flex flex-col items-center gap-2">
+          {inSession && (
+            <button
+              type="button"
+              onClick={onNewSession}
+              aria-label="Start a new review"
+              title="Start a new review"
+              className="w-9 h-9 grid place-items-center rounded-[9px] border-2.5 border-ink bg-paper text-base hover:bg-cream-2 transition-colors"
+            >
+              ⚔️
+            </button>
+          )}
           <Link
             href="/dashboard/history"
             aria-label="Review history"
@@ -265,7 +278,17 @@ export function TrainSidebar({
         </div>
       )}
 
-      <div className="mt-auto pt-3 border-t-2 border-ink/10">
+      <div className="mt-auto pt-3 border-t-2 border-ink/10 flex flex-col gap-2.5">
+        {inSession && (
+          <button
+            type="button"
+            onClick={onNewSession}
+            title="This session stays saved — you can resume it later"
+            className="flex items-center gap-2 text-[13px] font-bold text-ink-2 hover:text-brand transition-colors text-left"
+          >
+            ⚔️ Start a new review
+          </button>
+        )}
         <Link
           href="/dashboard/history"
           className="flex items-center gap-2 text-[13px] font-bold text-ink-2 hover:text-brand transition-colors"
