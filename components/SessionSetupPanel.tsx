@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import type { Language, Domain } from '@/types'
-
-const LANGUAGES: Language[] = ['TypeScript', 'C#']
+import { LANGUAGES } from '@/lib/languages'
 
 export const DOMAINS: { id: Exclude<Domain, 'custom'>; label: string; sub: string }[] = [
   { id: 'ecommerce',  label: 'E-Commerce',  sub: 'Cart, orders, payments' },
@@ -46,13 +45,13 @@ export function SessionSetupPanel({ onGenerate, loading, credits }: Props) {
         <label className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-2">
           Language
         </label>
-        <div className="flex gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {LANGUAGES.map((lang) => (
             <button
               key={lang}
               type="button"
               onClick={() => setLanguage(lang)}
-              className={`flex-1 py-2 font-display font-bold text-[13px] border-2.5 border-ink rounded-pop transition-all ${
+              className={`py-2 font-display font-bold text-[11px] border-2.5 border-ink rounded-pop transition-all ${
                 language === lang
                   ? 'bg-brand-soft shadow-hard-sm'
                   : 'bg-paper text-ink-2 hover:bg-cream-2'

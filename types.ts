@@ -1,4 +1,13 @@
-export type Language = 'TypeScript' | 'C#'
+export type Language =
+  | 'TypeScript'
+  | 'JavaScript'
+  | 'Python'
+  | 'Java'
+  | 'C#'
+  | 'C++'
+  | 'Go'
+  | 'Rust'
+  | 'SQL'
 
 export type Domain = 'ecommerce' | 'fintech' | 'healthcare' | 'devtools' | 'saas' | 'general' | 'custom'
 

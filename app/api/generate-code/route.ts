@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Language, Domain, GeneratedCode, GenerateResponse, CodeIssue } from '@/types'
+import { LANGUAGES, LANGUAGE_STYLE } from '@/lib/languages'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,6 +66,9 @@ export async function POST(request: NextRequest) {
   if (!language || !domain) {
     return NextResponse.json({ error: 'Missing language or domain' }, { status: 400 })
   }
+  if (!LANGUAGES.includes(language)) {
+    return NextResponse.json({ error: `Unsupported language: ${language}` }, { status: 400 })
+  }
   if (domain === 'custom' && !context?.trim()) {
     return NextResponse.json({ error: 'Custom domain requires a context description' }, { status: 400 })
   }
@@ -126,6 +130,7 @@ export async function POST(request: NextRequest) {
 
     const system = `You are a code generation assistant for a code review practice application used in job interview prep.
 Your job is to write realistic, plausible-looking ${language} code that contains intentional hidden issues.
+Write it as ${LANGUAGE_STYLE[language]}.
 The candidate must find these issues. Do NOT hint at the issues in comments or variable names — make the code look professional.
 Always respond with valid JSON only, no markdown fences.`
 
