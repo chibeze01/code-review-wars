@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { AnnotatedCodeEditor } from './AnnotatedCodeEditor'
 import { COMMENT_COLORS } from '@/lib/commentExtension'
 import { GRADE_COLORS, scoreColor } from '@/lib/ranks'
-import type { CodeComment, CodeIssue, EvaluationResult } from '@/types'
+import type { CodeComment, CodeIssue, EvaluationResult, Language } from '@/types'
 
 interface ReplayFeedback extends EvaluationResult {
   generatedIssues?: CodeIssue[]
@@ -141,7 +141,7 @@ export function SessionReplayPanel({ session }: Props) {
             <div className="border-t-2.5 border-ink p-4 flex flex-col gap-4">
               <AnnotatedCodeEditor
                 code={session.code}
-                language={session.language as 'TypeScript' | 'C#'}
+                language={session.language as Language}
                 initialComments={annotations}
                 readOnly
               />

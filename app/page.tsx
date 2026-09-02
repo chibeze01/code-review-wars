@@ -32,7 +32,7 @@ const STEPS = [
   {
     emoji: '🎯',
     title: 'Pick your poison',
-    body: 'Choose TypeScript or C# and the kind of system — fintech, healthcare, e-commerce. We generate real code that fits, with bugs baked in.',
+    body: 'Pick a language — TypeScript, Python, Java, C#, C++, Go, Rust, SQL — and the kind of system: fintech, healthcare, e-commerce. We generate real code that fits, with bugs baked in.',
   },
   {
     emoji: '🔍',
@@ -175,7 +175,7 @@ const FAQS = [
   },
   {
     q: 'Which languages are supported?',
-    a: 'TypeScript and C# today, across domains like fintech, healthcare, e-commerce and realtime systems. More languages are rolling out.',
+    a: 'TypeScript, JavaScript, Python, Java, C#, C++, Go, Rust and SQL — including the stack banks and trading desks actually review in. All of them work across domains like fintech, healthcare, e-commerce and realtime systems.',
     open: false,
   },
   {

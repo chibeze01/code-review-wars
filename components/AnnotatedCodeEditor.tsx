@@ -10,6 +10,11 @@ import { createPortal } from 'react-dom'
 import CodeMirror from '@uiw/react-codemirror'
 import { javascript } from '@codemirror/lang-javascript'
 import { java } from '@codemirror/lang-java'
+import { python } from '@codemirror/lang-python'
+import { cpp } from '@codemirror/lang-cpp'
+import { go } from '@codemirror/lang-go'
+import { rust } from '@codemirror/lang-rust'
+import { sql, PostgreSQL } from '@codemirror/lang-sql'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 import { EditorView, lineNumbers } from '@codemirror/view'
@@ -21,7 +26,22 @@ import {
   buildDecorations,
   COMMENT_COLORS,
 } from '@/lib/inlineCommentExtension'
+import type { Extension } from '@codemirror/state'
 import type { Language, CodeComment } from '@/types'
+
+// C# has no CodeMirror grammar of its own; Java's is close enough for the
+// braces, keywords and string handling a reviewer looks at.
+const LANG_MODE: Record<Language, () => Extension> = {
+  TypeScript: () => javascript({ typescript: true }),
+  JavaScript: () => javascript(),
+  Python:     () => python(),
+  Java:       () => java(),
+  'C#':       () => java(),
+  'C++':      () => cpp(),
+  Go:         () => go(),
+  Rust:       () => rust(),
+  SQL:        () => sql({ dialect: PostgreSQL }),
+}
 
 interface InternalComment extends CodeComment {
   widget: InlineWidget
@@ -444,10 +464,9 @@ export function AnnotatedCodeEditor({
     [readOnly],
   )
 
-  const langExt = useMemo(
-    () => (language === 'TypeScript' ? javascript({ typescript: true }) : java()),
-    [language],
-  )
+  // Session rows store the language as free text, so fall back rather than
+  // blowing up on a value the table doesn't know.
+  const langExt = useMemo(() => (LANG_MODE[language] ?? LANG_MODE.TypeScript)(), [language])
 
   const extensions = useMemo(
     () => [
