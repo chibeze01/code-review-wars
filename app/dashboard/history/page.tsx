@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getRankProgress, GRADE_COLORS, scoreColor } from '@/lib/ranks'
 import { RankBadge } from '@/components/RankBadge'
 import { AppNav } from '@/components/AppNav'
+import { LegalLinks } from '@/components/SiteChrome'
 
 export default async function HistoryPage() {
   const supabase = await createClient()
@@ -188,6 +189,7 @@ export default async function HistoryPage() {
           </div>
         )}
       </div>
+      <LegalLinks className="pb-8" />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { LegalLinks } from '@/components/SiteChrome'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -79,6 +80,7 @@ export default function LoginPage() {
             Sign up free
           </Link>
         </p>
+        <LegalLinks className="mt-8" />
       </div>
     </div>
   )

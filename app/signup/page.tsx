@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { LegalLinks } from '@/components/SiteChrome'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -101,6 +102,12 @@ export default function SignupPage() {
             Sign in
           </Link>
         </p>
+        <p className="mt-3 text-center text-xs text-ink-3">
+          By creating an account you agree to the{' '}
+          <Link href="/terms" className="underline hover:text-ink">terms</Link> and{' '}
+          <Link href="/privacy" className="underline hover:text-ink">privacy policy</Link>.
+        </p>
+        <LegalLinks className="mt-8" />
       </div>
     </div>
   )

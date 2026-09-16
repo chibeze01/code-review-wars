@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { SITE, formatDate } from '@/lib/site'
 
 // Real Stripe packs — keep in sync with /api/stripe/checkout and the landing page
 const CREDIT_PACKS = [
@@ -9,7 +11,6 @@ const CREDIT_PACKS = [
     name: 'Starter',
     credits: 10,
     price: '$5',
-    was: '$10',
     pricePerCredit: '$0.50 / review',
     popular: false,
   },
@@ -18,7 +19,6 @@ const CREDIT_PACKS = [
     name: 'Standard',
     credits: 50,
     price: '$18',
-    was: '$36',
     pricePerCredit: '$0.36 / review',
     popular: true,
   },
@@ -27,7 +27,6 @@ const CREDIT_PACKS = [
     name: 'Pro',
     credits: 150,
     price: '$45',
-    was: '$90',
     pricePerCredit: '$0.30 / review',
     popular: false,
   },
@@ -112,7 +111,7 @@ export function BillingClient({ credits, transactions, success, canceled }: Prop
       {/* Credit packs — mirrors the landing pricing cards */}
       <p className="font-display font-bold text-[13px] uppercase tracking-[0.08em] text-ink-3 mb-5">Pick your pack</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-12 items-start">
-        {CREDIT_PACKS.map(({ pack, name, credits: c, price, was, pricePerCredit, popular }) => (
+        {CREDIT_PACKS.map(({ pack, name, credits: c, price, pricePerCredit, popular }) => (
           <div
             key={pack}
             className={`relative p-5 bg-paper border-2.5 rounded-pop-lg ${
@@ -127,10 +126,10 @@ export function BillingClient({ credits, transactions, success, canceled }: Prop
             <h3 className="font-display font-extrabold text-lg">{name}</h3>
             <div className="flex items-baseline gap-2 mt-2 mb-0.5">
               <span className="font-display font-extrabold text-[34px]">{price}</span>
-              <span className="text-base text-ink-3 line-through font-bold">{was}</span>
             </div>
             <p className="font-bold text-brand text-sm">{c} credits</p>
             <p className="text-[11px] text-ink-3 mt-0.5">{pricePerCredit}</p>
+            <p className="text-[11px] text-ink-3 mt-0.5">Launch price until {formatDate(SITE.launchPriceEnds)}</p>
             <button
               onClick={() => handleBuy(pack)}
               disabled={!!loading}
@@ -141,6 +140,10 @@ export function BillingClient({ credits, transactions, success, canceled }: Prop
           </div>
         ))}
       </div>
+      <p className="text-xs text-ink-3 -mt-8 mb-12">
+        Credits never expire. Purchased credits are non-refundable — see the{' '}
+        <Link href="/terms" className="underline hover:text-ink">terms</Link>.
+      </p>
 
       {/* Transaction history */}
       {transactions.length > 0 && (
