@@ -1,0 +1,16 @@
+# Store every text file with LF in the repository, regardless of the machine or
+# editor it was committed from. Without this, commits made with different
+# core.autocrlf settings stored different line endings for the same file, so
+# Git saw every line as changed — develop and master ended up "conflicting" on
+# 59 files that had no real differences between them.
+* text=auto eol=lf
+
+# Binary assets: never convert, never diff as text.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
