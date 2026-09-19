@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Bricolage_Grotesque, Inter, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { SITE } from '@/lib/site'
 import './globals.css'
 
 const display = Bricolage_Grotesque({
@@ -22,10 +23,24 @@ const mono = JetBrains_Mono({
   variable: '--font-mono',
 })
 
+const DESCRIPTION =
+  'Real, messy production code with nasty bugs hidden inside — graded like a staff engineer. Built for the code review interview round. 3 free sessions, no card.'
+
 export const metadata: Metadata = {
-  title: 'Code Review Wars — get dangerous in the review round',
-  description:
-    'Real, messy production code with nasty bugs hidden inside — graded like a staff engineer. Get sharp. Get hired.',
+  metadataBase: new URL(SITE.url),
+  title: {
+    default: 'Code Review Wars — get dangerous in the review round',
+    template: `%s · ${SITE.name}`,
+  },
+  description: DESCRIPTION,
+  openGraph: {
+    type: 'website',
+    siteName: SITE.name,
+    url: SITE.url,
+    title: 'Code Review Wars — get dangerous in the review round',
+    description: DESCRIPTION,
+  },
+  twitter: { card: 'summary_large_image' },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

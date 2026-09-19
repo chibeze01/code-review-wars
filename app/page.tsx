@@ -1,14 +1,19 @@
-'use client'
-
 import Link from 'next/link'
+import { SiteNav, SiteFooter, WRAP } from '@/components/SiteChrome'
+import { LogoStrip } from '@/components/LogoStrip'
+import { getPublicCounters, showCounter } from '@/lib/counters'
+import { SITE, PRODUCT_FACTS, formatDate } from '@/lib/site'
 
 /* ────────────────────────────────────────────────────────────────────────────
    Landing page — "indie" design (Marc Lou style).
-   Reference: handoff landing-indie.html. Copy is verbatim from the handoff;
-   pricing uses the real Stripe packs so checkout always matches the marketing.
+   No testimonials, ratings or user counts: the product has no users to quote
+   yet. Social proof is product facts, cited third-party evidence (/sources),
+   a public graded example (/sample) and live counters that only render once
+   they are real.
 ──────────────────────────────────────────────────────────────────────────── */
 
-const WRAP = 'max-w-[1140px] mx-auto px-[22px]'
+// Counters come from the DB; re-render at most every 5 minutes.
+export const revalidate = 300
 
 const PAIN_CARDS = [
   {
@@ -43,6 +48,7 @@ const STEPS = [
     emoji: '🏆',
     title: 'Get graded instantly',
     body: 'An AI staff engineer scores your review, shows what you missed, and coaches you up.',
+    link: { href: '/sample', label: 'See a graded example →' },
   },
 ]
 
@@ -85,63 +91,11 @@ const FEATURES = [
   },
 ]
 
-const TESTIMONIALS = [
-  {
-    quote:
-      '"Bombed the review round at a staff loop. Did ~40 of these over two weeks and walked back in like I owned the codebase. Signed last Friday. 🎉"',
-    initials: 'JK',
-    fill: 'bg-brand text-white',
-    name: 'Jordan K.',
-    role: 'Staff Eng → Series B fintech',
-  },
-  {
-    quote:
-      '"Caught a race condition in my third session that I would absolutely have merged a month ago. This rewires how you read code."',
-    initials: 'AM',
-    fill: 'bg-coral text-white',
-    name: 'Aïsha M.',
-    role: 'Backend Engineer',
-  },
-  {
-    quote:
-      '"Finally something that isn\'t LeetCode. Reading real, ugly code under pressure is the skill nobody trains. This trains it."',
-    initials: 'SR',
-    fill: 'bg-accent-blue text-white',
-    name: 'Sam R.',
-    role: 'SWE II @ big tech',
-  },
-  {
-    quote:
-      '"I run a bootcamp and made this required prep. My students\' review-round pass rate went from ~40% to over 80%. Wild."',
-    initials: 'PL',
-    fill: 'bg-[#a78bfa] text-white',
-    name: 'Priya L.',
-    role: 'Bootcamp lead',
-  },
-  {
-    quote:
-      '"The severity weighting retrained my instincts. I stopped nitpicking variable names and started hunting for the stuff that pages you at 3am."',
-    initials: 'DV',
-    fill: 'bg-hi',
-    name: 'Dimitri V.',
-    role: 'Senior Platform Eng',
-  },
-  {
-    quote:
-      '"One-time payment, no subscription nonsense, and I actually got better. Easiest money I\'ve spent on my career this year."',
-    initials: 'TS',
-    fill: 'bg-coral text-white',
-    name: 'Tomás S.',
-    role: 'Full-stack dev',
-  },
-]
-
 // Real Stripe packs — keep in sync with /api/stripe/checkout
 const PACKS = [
   {
     name: 'Starter',
-    now: '$5',
-    was: '$10',
+    price: '$5',
     credits: '10 credits',
     popular: false,
     features: ['10 full review sessions', 'All languages & domains', 'Heatmap + skill tracking', 'Credits never expire'],
@@ -149,8 +103,7 @@ const PACKS = [
   },
   {
     name: 'Standard',
-    now: '$18',
-    was: '$36',
+    price: '$18',
     credits: '50 credits',
     popular: true,
     features: ['50 full review sessions', 'Everything in Starter', 'Rank ladder to 1 dan', 'Best price-per-review'],
@@ -158,8 +111,7 @@ const PACKS = [
   },
   {
     name: 'Pro',
-    now: '$45',
-    was: '$90',
+    price: '$45',
     credits: '150 credits',
     popular: false,
     features: ['150 full review sessions', 'Everything in Standard', 'Early access to new domains', 'Train forever'],
@@ -195,21 +147,9 @@ const FAQS = [
   },
 ]
 
-function Logo({ light = false, responsive = false }: { light?: boolean; responsive?: boolean }) {
-  return (
-    <Link href="/" className={`flex items-center gap-2 font-display font-extrabold text-lg ${light ? 'text-white' : 'text-ink'}`}>
-      <span className="w-[34px] h-[34px] border-2.5 border-ink rounded-[9px] bg-brand text-white grid place-items-center text-lg shadow-hard-sm">
-        ⚔️
-      </span>
-      {/* Drop the wordmark on phones so the auth actions always fit. */}
-      <span className={responsive ? 'hidden sm:inline' : ''}>Code Review Wars</span>
-    </Link>
-  )
-}
-
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <div className="font-display font-bold text-sm text-brand uppercase tracking-[0.08em]">{children}</div>
+    <div className="laurel-leading laurel-trailing font-display font-bold text-sm text-brand uppercase tracking-[0.08em]">{children}</div>
   )
 }
 
@@ -285,46 +225,38 @@ function HeroMock() {
   )
 }
 
-export default function LandingPage() {
+function Stat({ big, rest }: { big: string; rest: string }) {
+  return (
+    <div>
+      <span className="text-[26px] text-ink">{big}</span> {rest}
+    </div>
+  )
+}
+
+export default async function LandingPage() {
+  const counters = await getPublicCounters()
+  const { languages, domains, bugsPerChallenge, ranks, freeCredits } = PRODUCT_FACTS
+  const fmt = (n: number) => n.toLocaleString('en-GB')
+
+  const stats: [string, string][] = [
+    [`${languages} languages`, `· ${domains} domains`],
+    [`${bugsPerChallenge.min}–${bugsPerChallenge.max}`, 'bugs per challenge'],
+    [`${ranks} ranks`, 'to climb'],
+    [`${freeCredits} free`, 'sessions to start'],
+  ]
+  if (showCounter(counters?.plantedFlaws)) stats.push([fmt(counters.plantedFlaws), 'planted flaws in the bank'])
+  if (showCounter(counters?.reviewsGraded)) stats.push([fmt(counters.reviewsGraded), 'reviews graded'])
+  if (showCounter(counters?.bugsCaught)) stats.push([fmt(counters.bugsCaught), 'bugs caught in review'])
+
   return (
     <div className="bg-cream text-ink">
-      {/* ── Sticky nav ── */}
-      <nav className="sticky top-0 z-50 bg-cream border-b-2.5 border-ink">
-        <div className={`${WRAP} flex items-center gap-4 h-16`}>
-          <Logo responsive />
-          <div className="flex gap-1 ml-2.5 max-[900px]:hidden">
-            {[
-              ['#how', 'How it works'],
-              ['#features', 'Features'],
-              ['#love', 'Reviews'],
-              ['#pricing', 'Pricing'],
-              ['#faq', 'FAQ'],
-            ].map(([href, label]) => (
-              <a
-                key={href}
-                href={href}
-                className="font-semibold text-[14.5px] text-ink-2 px-3 py-2 rounded-[9px] hover:text-ink hover:bg-cream-2 transition-colors"
-              >
-                {label}
-              </a>
-            ))}
-          </div>
-          <div className="ml-auto flex items-center gap-2.5">
-            <Link href="/login" className="font-semibold text-[14.5px] text-ink-2 hover:text-ink transition-colors">
-              Sign in
-            </Link>
-            <Link href="/signup" className="btn-pop btn-pop-green btn-pop-sm">
-              Start free →
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteNav />
 
       {/* ── Hero ── */}
       <header className="pt-16 pb-[70px]">
         <div className={`${WRAP} grid grid-cols-[1.05fr_0.95fr] max-[900px]:grid-cols-1 gap-12 items-center`}>
           <div>
-            <div className="tag-pop mb-[22px]">🏆 #1 way to prep for the code review round</div>
+            <div className="tag-pop mb-[22px]">🎯 Built specifically for the code review round</div>
             <h1 className="font-display font-extrabold leading-[1.04] text-[clamp(26px,7vw,62px)]">
               Become the dev who catches the bug{' '}
               <br className="block sm:hidden" />
@@ -338,50 +270,28 @@ export default function LandingPage() {
               <Link href="/signup" className="btn-pop btn-pop-green btn-pop-lg">
                 ⚡ Start catching bugs — free
               </Link>
-              <a href="#how" className="btn-pop btn-pop-lg">
-                See how it works
-              </a>
+              <Link href="/sample" className="btn-pop btn-pop-lg">
+                See a graded review
+              </Link>
             </div>
             <p className="text-[13.5px] text-ink-2 font-medium mt-3.5">
-              ✅ 3 free reviews &nbsp;•&nbsp; no credit card &nbsp;•&nbsp; one-time pricing, no subscription
+              ✅ {freeCredits} free reviews &nbsp;•&nbsp; no credit card &nbsp;•&nbsp; one-time pricing, no subscription
             </p>
-            <div className="flex items-center gap-3.5 mt-[26px] flex-wrap">
-              <div className="flex">
-                {[
-                  ['JK', 'bg-hi'],
-                  ['AM', 'bg-coral text-white'],
-                  ['SR', 'bg-accent-blue text-white'],
-                  ['PL', 'bg-brand text-white'],
-                  ['DV', 'bg-[#a78bfa] text-white'],
-                ].map(([initials, fill], i) => (
-                  <span key={initials} className={`av-pop ${fill} ${i > 0 ? '-ml-3' : ''}`}>
-                    {initials}
-                  </span>
-                ))}
-              </div>
-              <div>
-                <div className="text-[#f59e0b] tracking-wider">★★★★★</div>
-                <div className="text-[13.5px] font-semibold text-ink-2">
-                  Loved by engineers prepping for <b className="text-ink">FAANG</b>
-                </div>
-              </div>
-            </div>
           </div>
 
           <HeroMock />
         </div>
       </header>
 
-      {/* ── Proof bar ── */}
+      {/* ── Product facts ── */}
       <div className="bg-cream-2 border-y-2.5 border-ink py-6">
-        <div className={`${WRAP} flex items-center justify-center gap-[38px] flex-wrap font-display font-bold text-[15px] text-ink-2`}>
-          <div><span className="text-[26px] text-ink">2 languages</span> · 7 domains</div>
-          <div className="hidden sm:block">•</div>
-          <div><span className="text-[26px] text-ink">4–6</span> bugs per challenge</div>
-          <div className="hidden sm:block">•</div>
-          <div><span className="text-[26px] text-ink">9 ranks</span> to climb</div>
-          <div className="hidden sm:block">•</div>
-          <div><span className="text-[26px] text-ink">3 free</span> sessions to start</div>
+        <div className={`${WRAP} flex items-center justify-center gap-x-[38px] gap-y-3 flex-wrap font-display font-bold text-[15px] text-ink-2`}>
+          {stats.map(([big, rest], i) => (
+            <div key={big} className="contents">
+              {i > 0 && <div className="hidden sm:block">•</div>}
+              <Stat big={big} rest={rest} />
+            </div>
+          ))}
         </div>
       </div>
 
@@ -426,6 +336,11 @@ export default function LandingPage() {
                 <span className="text-[38px] block mb-3.5">{s.emoji}</span>
                 <h3 className="font-display font-extrabold text-[21px] mb-2">{s.title}</h3>
                 <p className="text-ink-2 text-[14.5px]">{s.body}</p>
+                {s.link && (
+                  <Link href={s.link.href} className="inline-block mt-3.5 font-display font-bold text-[14.5px] text-brand hover:underline">
+                    {s.link.label}
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -453,27 +368,43 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
-      <section id="love" className="py-[84px]">
+      {/* ── Where the review round shows up ── */}
+      <section id="where" className="py-[72px]">
         <div className={`${WRAP} text-center`}>
-          <Eyebrow>don&apos;t take our word for it</Eyebrow>
-          <SectionHeading>
-            Engineers are <span className="mark-hi">shipping their offers</span>
-          </SectionHeading>
-          <div className="columns-3 max-[900px]:columns-1 gap-[18px] mt-12 text-left">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="break-inside-avoid mb-[18px] p-[22px] bg-paper border-2.5 border-ink rounded-pop-lg shadow-hard">
-                <span className="block text-[#f59e0b] tracking-wider mb-[11px]">★★★★★</span>
-                <p className="text-[14.5px] leading-[1.6] mb-4">{t.quote}</p>
-                <div className="flex items-center gap-[11px]">
-                  <span className={`av-pop ${t.fill}`}>{t.initials}</span>
-                  <div>
-                    <div className="font-display font-bold text-sm">{t.name}</div>
-                    <div className="text-[12.5px] text-ink-3">{t.role}</div>
-                  </div>
-                </div>
+          <div className="font-display font-bold text-[13px] text-ink-3 uppercase tracking-[0.1em]">the format, not us</div>
+          <SectionHeading>Code review rounds are run at</SectionHeading>
+          <LogoStrip />
+        </div>
+      </section>
+
+      {/* ── Founder note ── */}
+      <section className="bg-paper border-t-2.5 border-ink py-[84px]">
+        <div className={WRAP}>
+          <div className="max-w-[780px] mx-auto p-9 bg-cream border-2.5 border-ink rounded-pop-xl shadow-hard-lg">
+            <div className="flex items-center gap-3.5 mb-2">
+              <span className="av-pop !w-[54px] !h-[54px] !text-lg bg-brand text-white">
+                {SITE.founderFirstName[0]}
+              </span>
+              <div>
+                <div className="font-display font-extrabold text-lg">A note from the founder 👋</div>
+                <div className="text-[13px] text-ink-3">Built solo · launched {SITE.launchMonth}</div>
               </div>
-            ))}
+            </div>
+            <p className="text-base text-ink-2 leading-[1.7] mt-2">
+              Hey — I built Code Review Wars after watching brilliant engineers (myself included) freeze
+              the second an interviewer shared a pull request. We grind algorithms for months and spend{' '}
+              <i>zero</i> time on the one thing we do every single day at work: reading and reviewing other
+              people&apos;s code.
+            </p>
+            <p className="text-base text-ink-2 leading-[1.7] mt-3.5">
+              So I made the tool I wish I&apos;d had — real code, real bugs, instant feedback. No fluff, no
+              subscription. Just reps until catching the bug becomes reflex.
+            </p>
+            <p className="text-base text-ink-2 leading-[1.7] mt-3.5">
+              Built solo and launched this month. No users to quote yet, so there are {freeCredits} free
+              sessions instead — <Link href="/sample" className="font-bold text-ink underline decoration-2 underline-offset-[3px] hover:text-brand">judge it yourself</Link>.
+            </p>
+            <div className="font-display font-extrabold text-[22px] mt-3.5">— {SITE.founderFirstName}</div>
           </div>
         </div>
       </section>
@@ -503,10 +434,10 @@ export default function LandingPage() {
                 )}
                 <h3 className="font-display font-extrabold text-[22px]">{p.name}</h3>
                 <div className="flex items-baseline gap-2 mt-3.5 mb-1">
-                  <span className="font-display font-extrabold text-[46px]">{p.now}</span>
-                  <span className="text-xl text-ink-3 line-through font-bold">{p.was}</span>
+                  <span className="font-display font-extrabold text-[46px]">{p.price}</span>
                 </div>
                 <div className="font-bold text-brand text-[15px]">{p.credits}</div>
+                <div className="text-xs text-ink-3 mt-1">Launch price until {formatDate(SITE.launchPriceEnds)}</div>
                 <ul className="my-5 flex flex-col gap-[11px]">
                   {p.features.map((f) => (
                     <li key={f} className="flex gap-2.5 items-start text-[14.5px]">
@@ -521,8 +452,12 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="inline-flex items-center gap-2 mt-[30px] font-semibold text-[14.5px] px-[18px] py-[11px] border-2.5 border-ink rounded-full bg-brand-soft shadow-hard-sm">
-            ✅ Start with 3 free sessions — no card required.
+            ✅ Start with {freeCredits} free sessions — no card required.
           </div>
+          <p className="text-[13.5px] text-ink-2 mt-4 max-w-[520px] mx-auto">
+            Purchased credits are non-refundable — that&apos;s what the free sessions are for. Details in the{' '}
+            <Link href="/terms" className="underline decoration-2 underline-offset-[3px] hover:text-ink">Terms</Link>.
+          </p>
         </div>
       </section>
 
@@ -549,32 +484,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Founder note ── */}
-      <section className="bg-paper border-t-2.5 border-ink py-[84px]">
-        <div className={WRAP}>
-          <div className="max-w-[780px] mx-auto p-9 bg-cream border-2.5 border-ink rounded-pop-xl shadow-hard-lg">
-            <div className="flex items-center gap-3.5 mb-2">
-              <span className="av-pop !w-[54px] !h-[54px] !text-lg bg-brand text-white">CW</span>
-              <div>
-                <div className="font-display font-extrabold text-lg">A note from the founder 👋</div>
-                <div className="text-[13px] text-ink-3">Built solo, shipped fast</div>
-              </div>
-            </div>
-            <p className="text-base text-ink-2 leading-[1.7] mt-2">
-              Hey — I built Code Review Wars after watching brilliant engineers (myself included) freeze
-              the second an interviewer shared a pull request. We grind algorithms for months and spend{' '}
-              <i>zero</i> time on the one thing we do every single day at work: reading and reviewing other
-              people&apos;s code.
-            </p>
-            <p className="text-base text-ink-2 leading-[1.7] mt-3.5">
-              So I made the tool I wish I&apos;d had — real code, real bugs, instant feedback. No fluff, no
-              subscription. Just reps until catching the bug becomes reflex.
-            </p>
-            <div className="font-display font-extrabold text-[22px] mt-3.5">— the maker of Code Review Wars</div>
-          </div>
-        </div>
-      </section>
-
       {/* ── Final CTA ── */}
       <section className="bg-brand border-t-2.5 border-ink text-white text-center py-[84px]">
         <div className={WRAP}>
@@ -582,7 +491,7 @@ export default function LandingPage() {
             Your next interview has a<br />code review round.
           </h2>
           <p className="text-[19px] text-[#eafff0] leading-[1.6] max-w-[520px] mx-auto mt-[18px]">
-            Walk in having reviewed a hundred bugs. Start free — three reviews on the house, no card.
+            Walk in having reviewed a hundred bugs. Start free — {freeCredits} reviews on the house, no card.
           </p>
           <div className="mt-8 flex gap-3.5 justify-center flex-wrap">
             <Link href="/signup" className="btn-pop btn-pop-yellow btn-pop-lg">
@@ -590,24 +499,12 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-4 text-[#eafff0] font-semibold text-sm">
-            ★★★★★ &nbsp;Join the engineers getting dangerous in review
+            No subscription. No card. Credits never expire.
           </p>
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="bg-ink text-[#d6d3d1] py-12 pb-9">
-        <div className={`${WRAP} flex items-center justify-between gap-5 flex-wrap`}>
-          <Logo light />
-          <div className="flex gap-[22px] text-sm">
-            <a href="#how" className="hover:text-white transition-colors">How it works</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-            <Link href="/login" className="hover:text-white transition-colors">Sign in</Link>
-          </div>
-          <div className="text-[13px] text-[#a8a29e]">© 2026 · Built for devs who catch things.</div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

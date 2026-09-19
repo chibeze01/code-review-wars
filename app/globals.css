@@ -92,6 +92,18 @@ body {
   }
 }
 
+/* Laurel ornaments — flank eyebrow / section labels */
+.laurel-leading::before {
+  content: '✦';
+  margin-right: 0.55em;
+  color: var(--green);
+}
+.laurel-trailing::after {
+  content: '✦';
+  margin-left: 0.55em;
+  color: var(--green);
+}
+
 /* Highlighter marker behind key words */
 .mark-hi {
   position: relative;
@@ -137,3 +149,44 @@ body {
 .font-display {
   letter-spacing: -0.02em;
 }
+
+/* Logo strip marquee — continuous loop, pauses on hover, static when the
+   viewer prefers reduced motion. */
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 42s linear infinite;
+}
+.marquee-group {
+  display: flex;
+  align-items: center;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee { -webkit-mask-image: none; mask-image: none; }
+  .marquee-track { animation: none; width: auto; justify-content: center; }
+  .marquee-group { flex-wrap: wrap; justify-content: center; }
+  .marquee-group[aria-hidden] { display: none; }
+}
+
+/* Static syntax tokens (lib/highlight.ts) — same palette as the live editor */
+.tok-kw    { color: #7c3aed; font-weight: 700; }
+.tok-str   { color: #0f7a37; }
+.tok-cmt   { color: #8a827b; font-style: italic; }
+.tok-num   { color: #c2410c; }
+.tok-fn    { color: #1e40af; }
+.tok-type  { color: #ca8a04; }
+.tok-prop  { color: #57534e; }
+.tok-var   { color: #1c1917; }
+.tok-punct { color: #57534e; }

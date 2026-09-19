@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppNav } from '@/components/AppNav'
+import { LegalLinks } from '@/components/SiteChrome'
 import { DashboardOverview, type SessionSummary } from '@/components/DashboardOverview'
 
 export default async function DashboardPage() {
@@ -39,6 +40,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-cream text-ink">
       <AppNav credits={credits} />
       <DashboardOverview email={user.email!} credits={credits} sessions={summaries} />
+      <LegalLinks className="pb-8" />
     </div>
   )
 }

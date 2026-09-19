@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppNav } from '@/components/AppNav'
+import { LegalLinks } from '@/components/SiteChrome'
 import { BillingClient } from '@/components/BillingClient'
 
 interface SearchParams {
@@ -40,6 +41,7 @@ export default async function BillingPage({
         success={!!params.success}
         canceled={!!params.canceled}
       />
+      <LegalLinks className="pb-8" />
     </div>
   )
 }
