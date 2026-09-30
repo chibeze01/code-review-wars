@@ -5,9 +5,14 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  // Password recovery emails carry a token_hash so the link works in any
+  // browser; PKCE `code` links only work in the browser that requested them.
+  const tokenHash = searchParams.get('token_hash')
+  // Only same-site paths — `@evil.com` or `//evil.com` would leave the site.
+  const nextParam = searchParams.get('next')
+  const next = nextParam?.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard'
 
-  if (code) {
+  if (code || tokenHash) {
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +28,9 @@ export async function GET(request: NextRequest) {
         },
       }
     )
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { error } = tokenHash
+      ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+      : await supabase.auth.exchangeCodeForSession(code!)
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     }

@@ -36,6 +36,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Reset page is only useful with a session (from the recovery email link)
+  if (!user && path === '/reset-password') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/forgot-password'
+    return NextResponse.redirect(url)
+  }
+
   // Redirect logged-in users away from auth pages
   if (user && (path === '/login' || path === '/signup')) {
     const url = request.nextUrl.clone()

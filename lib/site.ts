@@ -10,7 +10,7 @@ export const SITE = {
   founderFirstName: 'Chibeze',
   launchMonth: 'September 2026',
   // TODO(launch): UK distance-selling identity — legal trading name + address.
-  tradingName: 'Chibeze (sole trader) — confirm legal trading name before launch',
+  tradingName: 'Chibeze (sole trader)',
   tradingAddress: 'Trading address — add before launch',
   llmProvider: { name: 'Anthropic', privacyUrl: 'https://www.anthropic.com/privacy' },
   // Replaces the old strike-through "was" prices. This date is a promise: prices
